@@ -1,0 +1,15 @@
+# API Keys for local development
+# Copy this file to .dev.vars and fill in your actual keys
+# NEVER commit .dev.vars to git!
+
+# OpenAI API Key (required for OpenAI models)
+OPENAI_API_KEY=sk-proj-your-key-here
+
+# Anthropic API Key (optional, for Claude models)
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+
+# Google AI API Key (optional, for Gemini models)
+GOOGLE_API_KEY=your-google-key-here
+
+# Local/Custom Model URL (optional)
+LOCAL_MODEL_URL=http://localhost:8000/api/chat
