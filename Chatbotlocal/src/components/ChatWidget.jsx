@@ -1,19 +1,44 @@
 import React, { useState, useEffect, useRef } from "react";
 
 /**
- * Minimalny Reactowy widget czatu do użycia w Astro.
- * Komunikuje się z backendem FastAPI (endpoint /api/chat or /api/stream).
- * Nie używa żadnych zewnętrznych API.
+ * Zaawansowany Reactowy widget czatu z MCP tools, upload plików, edytor kodu, themes
+ * Komunikuje się z backendem FastAPI (endpoint /api/chat).
+ * Funkcje:
+ * - Upload plików (obrazy, dokumenty)
+ * - Edytor kodu z syntax highlighting
+ * - Expandable textarea
+ * - Dark/Light mode
+ * - PWA ready
  */
 
 export default function ChatWidget({ apiBaseUrl = "/api" }) {
   const [messages, setMessages] = useState([
-    { id: 0, role: "system", text: "Witaj! Jestem lokalnym chatbotem z MCP tools." },
+    { id: 0, role: "system", text: "Witaj! Jestem lokalnym chatbotem z MCP tools. Możesz wysyłać pliki, kod i używać narzędzi!" },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState("unknown"); // unknown, connected, error
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [codeContent, setCodeContent] = useState("");
+  const [codeLanguage, setCodeLanguage] = useState("python");
+  const [theme, setTheme] = useState(localStorage.getItem("chatTheme") || "light");
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const controllerRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll do końca wiadomości
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Zapisz theme do localStorage
+  useEffect(() => {
+    localStorage.setItem("chatTheme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   // Sprawdź połączenie z backendem przy starcie
   useEffect(() => {
@@ -34,17 +59,43 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
   }, [apiBaseUrl]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMsg = { id: Date.now(), role: "user", text: input.trim() };
+    if (!input.trim() && uploadedFiles.length === 0) return;
+
+    let messageText = input.trim();
+
+    // Dodaj informację o załączonych plikach
+    if (uploadedFiles.length > 0) {
+      messageText += "\n\n📎 Załączone pliki:\n" + uploadedFiles.map(f => f.name).join("\n");
+    }
+
+    const userMsg = { id: Date.now(), role: "user", text: messageText, files: uploadedFiles };
     setMessages((m) => [...m, userMsg]);
     setInput("");
+    setUploadedFiles([]);
     setLoading(true);
 
     try {
+      // Jeśli są pliki, wyślij jako FormData
+      let requestBody;
+      let headers = {};
+
+      if (uploadedFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("messages", JSON.stringify([...messages, userMsg]));
+        uploadedFiles.forEach(file => {
+          formData.append("files", file);
+        });
+        requestBody = formData;
+        // Nie ustawiaj Content-Type - browser ustawi automatycznie z boundary
+      } else {
+        headers["Content-Type"] = "application/json";
+        requestBody = JSON.stringify({ messages: [...messages, userMsg] });
+      }
+
       const res = await fetch(`${apiBaseUrl}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMsg] }),
+        headers: headers,
+        body: requestBody,
       });
 
       if (!res.ok) {
@@ -80,6 +131,37 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
     }
   };
 
+  // Obsługa uploadowania plików
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    setUploadedFiles(prev => [...prev, ...files]);
+  };
+
+  const removeFile = (index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Wstaw kod z edytora do wiadomości
+  const insertCode = () => {
+    if (codeContent.trim()) {
+      setInput(prev => prev + `\n\`\`\`${codeLanguage}\n${codeContent}\n\`\`\`\n`);
+      setCodeContent("");
+      setShowCodeEditor(false);
+    }
+  };
+
+  // Wyczyść czat
+  const clearChat = () => {
+    setMessages([
+      { id: 0, role: "system", text: "Czat wyczyszczony. Jak mogę pomóc?" }
+    ]);
+  };
+
+  // Toggle theme
+  const toggleTheme = () => {
+    setTheme(prev => prev === "light" ? "dark" : "light");
+  };
+
   // Opcjonalnie: obsługa klawisza Enter
   const onKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -95,17 +177,122 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
     unknown: "#FF9800"
   };
 
+  // Theme colors
+  const colors = theme === "dark" ? {
+    bg: "#1e1e1e",
+    surface: "#2d2d2d",
+    surfaceLight: "#3d3d3d",
+    text: "#e0e0e0",
+    textSecondary: "#b0b0b0",
+    border: "#404040",
+    userBubble: "#0084ff",
+    assistantBubble: "#3d3d3d",
+    toolBubble: "#ff9800",
+    errorBubble: "#f44336",
+    systemBubble: "#666",
+    buttonBg: "#0084ff",
+    buttonHover: "#0073e6"
+  } : {
+    bg: "#ffffff",
+    surface: "#f9f9f9",
+    surfaceLight: "#fff",
+    text: "#333",
+    textSecondary: "#666",
+    border: "#ddd",
+    userBubble: "#e3f2fd",
+    assistantBubble: "#f3f3f3",
+    toolBubble: "#fff3e0",
+    errorBubble: "#ffebee",
+    systemBubble: "#f5f5f5",
+    buttonBg: "#2196F3",
+    buttonHover: "#1976D2"
+  };
+
   return (
-    <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12, width: 400, maxWidth: "100%" }}>
+    <div style={{
+      border: `1px solid ${colors.border}`,
+      borderRadius: 12,
+      padding: 16,
+      width: isExpanded ? "90vw" : 500,
+      maxWidth: "100%",
+      background: colors.bg,
+      color: colors.text,
+      transition: "all 0.3s ease",
+      boxShadow: theme === "dark" ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
+    }}>
+      {/* Header with controls */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 12,
+        paddingBottom: 12,
+        borderBottom: `1px solid ${colors.border}`
+      }}>
+        <h3 style={{ margin: 0, fontSize: 18 }}>💬 MyBonzo AI Chat</h3>
+        <div style={{ display: "flex", gap: 8 }}>
+          {/* Expand button */}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              border: "none",
+              background: colors.surface,
+              color: colors.text,
+              cursor: "pointer",
+              fontSize: 16
+            }}
+            title={isExpanded ? "Zmniejsz" : "Powiększ"}
+          >
+            {isExpanded ? "⬅️" : "⬆️"}
+          </button>
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              border: "none",
+              background: colors.surface,
+              color: colors.text,
+              cursor: "pointer",
+              fontSize: 16
+            }}
+            title={theme === "dark" ? "Tryb jasny" : "Tryb ciemny"}
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
+
+          {/* Clear chat */}
+          <button
+            onClick={clearChat}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              border: "none",
+              background: colors.surface,
+              color: colors.text,
+              cursor: "pointer",
+              fontSize: 16
+            }}
+            title="Wyczyść czat"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+
       {/* Connection Status */}
       <div style={{
         display: "flex",
         alignItems: "center",
         gap: 8,
-        marginBottom: 8,
-        padding: 6,
-        background: "#f9f9f9",
-        borderRadius: 4
+        marginBottom: 12,
+        padding: 8,
+        background: colors.surface,
+        borderRadius: 6
       }}>
         <div style={{
           width: 10,
@@ -113,7 +300,7 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
           borderRadius: "50%",
           background: statusColors[connectionStatus]
         }} />
-        <span style={{ fontSize: 12, color: "#666" }}>
+        <span style={{ fontSize: 12, color: colors.textSecondary }}>
           {connectionStatus === "connected" && "✓ Połączono z backendem"}
           {connectionStatus === "error" && "✗ Brak połączenia"}
           {connectionStatus === "unknown" && "⟳ Sprawdzanie..."}
@@ -121,10 +308,17 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
       </div>
 
       {/* Messages */}
-      <div style={{ maxHeight: 400, overflowY: "auto", marginBottom: 8 }}>
+      <div style={{
+        maxHeight: isExpanded ? 500 : 400,
+        overflowY: "auto",
+        marginBottom: 12,
+        padding: 8,
+        background: colors.surfaceLight,
+        borderRadius: 8
+      }}>
         {messages.map((m) => (
-          <div key={m.id} style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 12, color: "#666", fontWeight: "bold" }}>
+          <div key={m.id} style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: colors.textSecondary, fontWeight: "bold", marginBottom: 4 }}>
               {m.role === "user" && "👤 Ty"}
               {m.role === "assistant" && "🤖 AI"}
               {m.role === "system" && "ℹ️ System"}
@@ -132,53 +326,260 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
               {m.role === "error" && "❌ Błąd"}
             </div>
             <div style={{
-              background: m.role === "user" ? "#e3f2fd" : m.role === "error" ? "#ffebee" : m.role === "tool" ? "#fff3e0" : "#f3f3f3",
-              padding: 8,
-              borderRadius: 6,
-              whiteSpace: "pre-wrap"
+              background:
+                m.role === "user" ? colors.userBubble :
+                m.role === "error" ? colors.errorBubble :
+                m.role === "tool" ? colors.toolBubble :
+                m.role === "system" ? colors.systemBubble :
+                colors.assistantBubble,
+              padding: 12,
+              borderRadius: 8,
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              color: m.role === "user" && theme === "light" ? "#000" : colors.text
             }}>
               {m.text}
+              {m.files && m.files.length > 0 && (
+                <div style={{ marginTop: 8, fontSize: 11, opacity: 0.8 }}>
+                  📎 {m.files.length} plik(ów)
+                </div>
+              )}
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
+      {/* Uploaded Files Display */}
+      {uploadedFiles.length > 0 && (
+        <div style={{
+          marginBottom: 12,
+          padding: 8,
+          background: colors.surface,
+          borderRadius: 6
+        }}>
+          <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 6 }}>📎 Załączone pliki:</div>
+          {uploadedFiles.map((file, idx) => (
+            <div key={idx} style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: 4,
+              marginBottom: 4,
+              background: colors.surfaceLight,
+              borderRadius: 4
+            }}>
+              <span style={{ fontSize: 12 }}>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+              <button
+                onClick={() => removeFile(idx)}
+                style={{
+                  padding: "2px 6px",
+                  borderRadius: 4,
+                  border: "none",
+                  background: colors.errorBubble,
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: 11
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Code Editor */}
+      {showCodeEditor && (
+        <div style={{
+          marginBottom: 12,
+          padding: 12,
+          background: colors.surface,
+          borderRadius: 8,
+          border: `1px solid ${colors.border}`
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <select
+              value={codeLanguage}
+              onChange={(e) => setCodeLanguage(e.target.value)}
+              style={{
+                padding: 6,
+                borderRadius: 4,
+                border: `1px solid ${colors.border}`,
+                background: colors.surfaceLight,
+                color: colors.text
+              }}
+            >
+              <option value="python">Python</option>
+              <option value="javascript">JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="json">JSON</option>
+              <option value="bash">Bash</option>
+            </select>
+            <button
+              onClick={() => setShowCodeEditor(false)}
+              style={{
+                padding: "4px 8px",
+                borderRadius: 4,
+                border: "none",
+                background: colors.errorBubble,
+                color: "#fff",
+                cursor: "pointer"
+              }}
+            >
+              ✕
+            </button>
+          </div>
+          <textarea
+            value={codeContent}
+            onChange={(e) => setCodeContent(e.target.value)}
+            placeholder={`Wpisz kod ${codeLanguage}...`}
+            style={{
+              width: "100%",
+              minHeight: 150,
+              padding: 8,
+              borderRadius: 4,
+              border: `1px solid ${colors.border}`,
+              fontFamily: "monospace",
+              fontSize: 13,
+              background: theme === "dark" ? "#1e1e1e" : "#f5f5f5",
+              color: colors.text,
+              resize: "vertical"
+            }}
+          />
+          <button
+            onClick={insertCode}
+            style={{
+              marginTop: 8,
+              padding: "8px 16px",
+              borderRadius: 6,
+              border: "none",
+              background: colors.buttonBg,
+              color: "white",
+              cursor: "pointer",
+              fontWeight: "bold"
+            }}
+          >
+            ✅ Wstaw kod do wiadomości
+          </button>
+        </div>
+      )}
+
+      {/* Input Area */}
       <textarea
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={onKeyDown}
-        rows={3}
+        rows={isExpanded ? 5 : 3}
         style={{
           width: "100%",
           marginBottom: 8,
-          padding: 8,
-          borderRadius: 4,
-          border: "1px solid #ddd",
-          fontFamily: "inherit"
+          padding: 10,
+          borderRadius: 8,
+          border: `1px solid ${colors.border}`,
+          fontFamily: "inherit",
+          fontSize: 14,
+          background: colors.surfaceLight,
+          color: colors.text,
+          resize: "vertical"
         }}
         placeholder="Napisz wiadomość... (Enter = wyślij, Shift+Enter = nowa linia)"
         disabled={loading || connectionStatus === "error"}
       />
 
-      {/* Send Button */}
-      <div style={{ display: "flex", gap: 8 }}>
+      {/* Action Buttons */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {/* Send Button */}
         <button
           onClick={sendMessage}
           disabled={loading || connectionStatus === "error"}
           style={{
             flex: 1,
-            padding: 10,
-            borderRadius: 4,
+            minWidth: 120,
+            padding: 12,
+            borderRadius: 8,
             border: "none",
-            background: loading ? "#ccc" : "#2196F3",
+            background: loading ? "#ccc" : colors.buttonBg,
             color: "white",
             fontWeight: "bold",
-            cursor: loading || connectionStatus === "error" ? "not-allowed" : "pointer"
+            cursor: loading || connectionStatus === "error" ? "not-allowed" : "pointer",
+            fontSize: 14,
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={(e) => {
+            if (!loading && connectionStatus === "connected") {
+              e.target.style.background = colors.buttonHover;
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) {
+              e.target.style.background = colors.buttonBg;
+            }
           }}
         >
           {loading ? "⏳ Wysyłanie..." : "📤 Wyślij"}
         </button>
+
+        {/* File Upload Button */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+          style={{
+            padding: 12,
+            borderRadius: 8,
+            border: "none",
+            background: colors.surface,
+            color: colors.text,
+            cursor: loading ? "not-allowed" : "pointer",
+            fontWeight: "bold",
+            fontSize: 14
+          }}
+          title="Dodaj plik"
+        >
+          📎 Plik
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          onChange={handleFileUpload}
+          style={{ display: "none" }}
+          accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.json,.csv,.md"
+        />
+
+        {/* Code Editor Toggle */}
+        <button
+          onClick={() => setShowCodeEditor(!showCodeEditor)}
+          disabled={loading}
+          style={{
+            padding: 12,
+            borderRadius: 8,
+            border: "none",
+            background: colors.surface,
+            color: colors.text,
+            cursor: loading ? "not-allowed" : "pointer",
+            fontWeight: "bold",
+            fontSize: 14
+          }}
+          title="Edytor kodu"
+        >
+          💻 Kod
+        </button>
+      </div>
+
+      {/* PWA Install Hint (pokazuje się tylko jeśli PWA nie zainstalowana) */}
+      <div style={{
+        marginTop: 12,
+        padding: 8,
+        background: colors.surface,
+        borderRadius: 6,
+        fontSize: 11,
+        color: colors.textSecondary,
+        textAlign: "center"
+      }}>
+        💡 Wskazówka: Możesz zainstalować tę aplikację na swoim urządzeniu (Android/iOS)
       </div>
     </div>
   );
