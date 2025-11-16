@@ -1,27 +1,101 @@
-# Lokalny Chatbot dla Astro + Cloudflare
+# 🤖 MyBonzo AI Chat - Lokalny Chatbot z MCP
 
-Opis: frontend w Astro + React, backend FastAPI + PyTorch używający lokalnego modelu (bez zewnętrznych kluczy).
+**Frontend**: Astro + React | **Backend**: FastAPI + PyTorch + MCP Tools
 
-Szybki start:
-1. Przygotowanie serwera z GPU:
-   - Zainstaluj sterowniki NVIDIA odpowiednie do karty.
-   - Zainstaluj NVIDIA Docker (nvidia-container-toolkit).
-   - Zainstaluj CUDA (jeśli wymagane).
-   - Zainstaluj odpowiednią wersję PyTorch zgodną z CUDA:
-     - Przykład (dla CUDA 11.8): pip install torch --index-url https://download.pytorch.org/whl/cu118
-2. Umieść model w ./models (np. model z transformers lub lokalnie wytrenowany).
-   - Możesz pobrać model z Hugging Face lokalnie (bez używania kluczy jeśli model jest publiczny) lub skopiować własny katalog modelu.
-3. Uruchom Docker Compose:
-   - docker compose up --build
-4. W frontendzie ustaw apiBaseUrl na adres backendu (np. https://twoj-backend.example.com).
-5. Wdróż frontend do Cloudflare Pages (repo z Astro); backend hostuj na VPS z GPU lub na serwerze prywatnym.
+✨ **Pełna integracja Model Context Protocol (MCP)** - lokalny model AI z dostępem do narzędzi!
 
-Optymalizacje pamięci i wydajności:
-- Ładuj model z low_cpu_mem_usage=True
-- Użyj dtype float16 (torch.float16) jeśli GPU obsługuje fp16
-- Rozważ quantization (bitsandbytes lub llama.cpp/ggml) aby zmniejszyć pamięć RAM/VRAM
-- Streamuj odpowiedzi (server-sent events lub websockets) aby UX był lepszy
-- Ogranicz max_new_tokens i długość promptów, czyść stare konteksty
+## 🌟 Nowe funkcje (MCP Integration)
+
+- 🔧 **9 gotowych narzędzi MCP**: file ops, web search, calculator, code execution i więcej
+- 🔒 **Bezpieczne sandboxing**: izolowane wykonywanie z timeoutami
+- 🌐 **Environment-based config**: łatwa konfiguracja przez .env
+- ✅ **Connection monitoring**: real-time status połączenia front-back
+- 📊 **Tool calls visualization**: wyświetlanie użytych narzędzi w UI
+- 🎨 **Rozszerzalne**: łatwe dodawanie własnych narzędzi
+
+👉 **[Pełna dokumentacja MCP Integration Guide →](./MCP_INTEGRATION_GUIDE.md)**
+
+## 🚀 Szybki start
+
+### Backend (FastAPI + PyTorch + MCP)
+
+1. **Przygotuj serwer z GPU** (opcjonalne, można też CPU):
+   ```bash
+   # Sterowniki NVIDIA + CUDA
+   # PyTorch dla CUDA 11.8:
+   pip install torch --index-url https://download.pytorch.org/whl/cu118
+   ```
+
+2. **Zainstaluj zależności**:
+   ```bash
+   cd Chatbotlocal/backend
+   pip install -r requirements.txt
+   ```
+
+3. **Konfiguracja**:
+   ```bash
+   cp .env.example .env
+   nano .env  # Ustaw ALLOWED_ORIGINS, MCP_SAFE_DIR, etc.
+   ```
+
+4. **Umieść model** w `./models/`:
+   - Z HuggingFace lokalnie lub własny model
+
+5. **Uruchom backend**:
+   ```bash
+   cd app
+   python main.py
+   # Lub Docker:
+   docker compose up --build
+   ```
+
+   Backend na: `http://localhost:8000`
+
+### Frontend (Astro + React)
+
+1. **Konfiguruj environment**:
+   ```bash
+   # W głównym katalogu projektu
+   cp .dev.vars.example .dev.vars
+   nano .dev.vars  # Ustaw PUBLIC_BACKEND_URL
+   ```
+
+2. **Instaluj i uruchom**:
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+   Frontend na: `http://localhost:4321`
+
+3. **Deployment**:
+   - **Frontend**: Cloudflare Pages (automatyczny deploy z repo)
+   - **Backend**: VPS z GPU lub prywatny serwer
+
+## 🔧 Dostępne narzędzia MCP
+
+| Narzędzie | Opis | Przykład użycia |
+|-----------|------|-----------------|
+| 📄 `read_file` | Czyta pliki | `[TOOL:read_file]data.txt[/TOOL]` |
+| ✏️ `write_file` | Zapisuje pliki | `[TOOL:write_file]note.txt\|Hello[/TOOL]` |
+| 📁 `list_directory` | Lista plików | `[TOOL:list_directory]./data[/TOOL]` |
+| 🔍 `web_search` | Szuka w necie | `[TOOL:web_search]Python tutorial[/TOOL]` |
+| 🔢 `calculator` | Obliczenia mat. | `[TOOL:calculator]sqrt(16)+5[/TOOL]` |
+| 🐍 `execute_python` | Uruchamia kod | `[TOOL:execute_python]print("Hi")[/TOOL]` |
+| 💻 `system_info` | Info o systemie | `[TOOL:system_info][/TOOL]` |
+| 🕐 `get_datetime` | Data i czas | `[TOOL:get_datetime][/TOOL]` |
+| 📊 `count_words` | Statystyki tekstu | `[TOOL:count_words]Test text[/TOOL]` |
+
+**Więcej**: Zobacz [MCP_INTEGRATION_GUIDE.md](./MCP_INTEGRATION_GUIDE.md)
+
+## ⚡ Optymalizacje pamięci i wydajności
+
+- ✅ Model z `low_cpu_mem_usage=True`
+- ✅ FP16 (`torch.float16`) dla GPU
+- 🔄 Quantization (bitsandbytes/llama.cpp) dla mniejszej VRAM
+- 🔄 Streaming responses (SSE) - w planach
+- ✅ Limit `max_new_tokens` i czyszczenie kontekstu
+- ✅ Connection pooling i CORS optimization
 
 Deployment z Cloudflare:
 - Frontend: Cloudflare Pages (statyczne)

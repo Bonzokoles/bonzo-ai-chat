@@ -11,5 +11,12 @@ ANTHROPIC_API_KEY=sk-ant-your-key-here
 # Google AI API Key (optional, for Gemini models)
 GOOGLE_API_KEY=your-google-key-here
 
-# Local/Custom Model URL (optional)
-LOCAL_MODEL_URL=http://localhost:8000/api/chat
+# Local Chatbot Backend URL (WAŻNE: ustaw adres twojego backendu)
+# Development: http://localhost:8000/api
+# Production: https://twoj-backend-vps.example.com/api
+PUBLIC_BACKEND_URL=http://localhost:8000/api
+
+# Backend CORS - dozwolone origins (oddzielone przecinkami)
+# Development: *
+# Production: https://twoja-strona.pages.dev,https://twoja-domena.com
+ALLOWED_ORIGINS=*

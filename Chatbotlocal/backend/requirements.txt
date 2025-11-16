@@ -4,3 +4,5 @@ transformers>=4.30
 torch  # Zainstaluj wersję zgodną z CUDA na twoim serwerze (opis poniżej)
 sqlalchemy
 pydantic
+requests  # Do web search (DuckDuckGo API)
+python-dotenv  # Do obsługi .env files

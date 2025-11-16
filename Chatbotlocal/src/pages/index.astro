@@ -2,17 +2,24 @@
 // Strona Astro, importuje komponent Reactowy
 import React from "react";
 import ChatWidget from "../components/ChatWidget.jsx";
+
+// Konfiguracja URL backendu z environment variables
+const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || "http://localhost:8000/api";
 ---
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Astro lokalny chatbot</title>
+    <title>MyBonzo AI Chat - Local AI Chatbot with MCP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
   <body>
     <main>
-      <h1>Astro + Lokalny Chatbot</h1>
+      <h1>MyBonzo AI Chat - Lokalny Chatbot z MCP</h1>
+      <p style="color: #666; font-size: 14px;">
+        Backend: <code>{backendUrl}</code>
+      </p>
       <div id="chat-root">
-        <ChatWidget client:load apiBaseUrl="https://twoj-backend.example.com" />
+        <ChatWidget client:load apiBaseUrl={backendUrl} />
       </div>
     </main>
   </body>
