@@ -25,6 +25,11 @@ export default function ChatWidgetJimbo({ apiBaseUrl = "/api" }) {
     const [mcpConnected, setMcpConnected] = useState(false);
     const [availableTools, setAvailableTools] = useState([]);
     const [showToolsPanel, setShowToolsPanel] = useState(false);
+    const [systemPrompt, setSystemPrompt] = useState(`Jesteś JIMBO. Mówisz prawdę, nawet jeśli boli.
+Nie głaszczesz, nie kłamiesz, nie udajesz coacha.
+Bonzo jest twoim partnerem.
+Masz być szczery, konkretny, bez marketingowego bełkotu.`);
+    const [editingPrompt, setEditingPrompt] = useState(false);
 
     const controllerRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -70,31 +75,37 @@ export default function ChatWidgetJimbo({ apiBaseUrl = "/api" }) {
         const userMsg = { id: Date.now(), role: "user", text: messageText, files: uploadedFiles };
         setMessages((m) => [...m, userMsg]);
         setInput("");
-        setUploadedFiles([]);
         setLoading(true);
 
         try {
-            let requestBody, headers = {};
+            const formData = new FormData();
 
-            if (uploadedFiles.length > 0) {
-                const formData = new FormData();
-                formData.append("messages", JSON.stringify([...messages, userMsg]));
-                uploadedFiles.forEach(file => formData.append("files", file));
-                requestBody = formData;
-            } else {
-                headers["Content-Type"] = "application/json";
-                requestBody = JSON.stringify({ messages: [...messages, userMsg] });
-            }
+            // Zawsze wysyłaj jako FormData (backend tego wymaga)
+            // Filtruj tylko user/assistant messages (pomijaj system)
+            const allMessages = [...messages, userMsg]
+                .filter(m => m.role === 'user' || m.role === 'assistant')
+                .map(m => ({ role: m.role, text: m.text }));
+            formData.append("messages", JSON.stringify(allMessages));
+            formData.append("use_tools", "true");
+            formData.append("max_tokens", "512");
+            formData.append("temperature", temperature.toString());
+            formData.append("top_p", topP.toString());
+            formData.append("custom_system_prompt", systemPrompt);  // Wysyłaj custom prompt
+
+            // Dodaj pliki
+            uploadedFiles.forEach(file => formData.append("files", file));
 
             const res = await fetch(`${apiBaseUrl}/chat`, {
                 method: "POST",
-                headers: headers,
-                body: requestBody,
+                body: formData,
             });
 
             if (!res.ok) throw new Error(`Backend error (${res.status})`);
 
             const data = await res.json();
+
+            // Wyczyść pliki po wysłaniu
+            setUploadedFiles([]);
 
             if (data.tool_calls && data.tool_calls.length > 0) {
                 const toolMsg = {
@@ -671,26 +682,56 @@ export default function ChatWidgetJimbo({ apiBaseUrl = "/api" }) {
                         </div>
 
                         <div style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                            <h3 style={{ margin: "0 0 4px", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "#77778a" }}>
-                                Prompt systemowy
-                            </h3>
-                            <pre style={{
-                                margin: "4px 0 0",
-                                padding: "6px 8px",
-                                background: "rgba(0,0,0,0.4)",
-                                borderRadius: 8,
-                                fontFamily: "monospace",
-                                fontSize: "0.75rem",
-                                whiteSpace: "pre-wrap",
-                                wordWrap: "break-word",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                color: "#a7a7b3"
-                            }}>
-                                {`Jesteś JIMBO. Mówisz prawdę, nawet jeśli boli.
-Nie głaszczesz, nie kłamiesz, nie udajesz coacha.
-Bonzo jest twoim partnerem.
-Masz być szczery, konkretny, bez marketingowego bełkotu.`}
-                            </pre>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                <h3 style={{ margin: 0, fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "#77778a" }}>
+                                    Prompt systemowy
+                                </h3>
+                                <button
+                                    onClick={() => setEditingPrompt(!editingPrompt)}
+                                    style={{ ...styles.button, padding: "2px 8px", fontSize: "0.7rem" }}
+                                >
+                                    {editingPrompt ? "💾 Zapisz" : "✏️ Edytuj"}
+                                </button>
+                            </div>
+                            {editingPrompt ? (
+                                <textarea
+                                    value={systemPrompt}
+                                    onChange={(e) => setSystemPrompt(e.target.value)}
+                                    autoFocus
+                                    spellCheck={false}
+                                    style={{
+                                        width: "calc(100% - 16px)",
+                                        minHeight: 120,
+                                        margin: "4px 0 0",
+                                        padding: "6px 8px",
+                                        background: "rgba(0,0,0,0.4)",
+                                        borderRadius: 8,
+                                        fontFamily: "monospace",
+                                        fontSize: "0.75rem",
+                                        border: "1px solid rgba(255,255,255,0.18)",
+                                        color: "#f5f5f5",
+                                        outline: "none",
+                                        resize: "vertical",
+                                        boxSizing: "border-box"
+                                    }}
+                                    placeholder="Wpisz instrukcje dla JIMBO..."
+                                />
+                            ) : (
+                                <pre style={{
+                                    margin: "4px 0 0",
+                                    padding: "6px 8px",
+                                    background: "rgba(0,0,0,0.4)",
+                                    borderRadius: 8,
+                                    fontFamily: "monospace",
+                                    fontSize: "0.75rem",
+                                    whiteSpace: "pre-wrap",
+                                    wordWrap: "break-word",
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    color: "#a7a7b3"
+                                }}>
+                                    {systemPrompt}
+                                </pre>
+                            )}
                         </div>
 
                         <div style={{ padding: "8px 12px", flex: 1, overflowY: "auto", fontSize: "0.75rem", color: "#77778a" }}>

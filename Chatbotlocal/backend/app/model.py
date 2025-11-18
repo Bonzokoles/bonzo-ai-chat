@@ -1,38 +1,59 @@
-# Prosty wrapper do ładowania modelu transformers (lokalnego, bez API)
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig
+# Wrapper do Ollama API - lokalny LLM bez GPU requirements
+import requests
+import os
 
 class LocalModel:
-    def __init__(self, model_name_or_path="models/your-model-folder", device=None):
-        # device detection
-        if device is None:
-            self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        else:
-            self.device = device
-
-        # Opcje optymalizacji pamięci
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, use_fast=True)
-        # low_cpu_mem_usage helps when loading large models
-        self.model = AutoModelForCausalLM.from_pretrained(
-            model_name_or_path,
-            device_map="auto" if self.device == "cuda" else None,
-            low_cpu_mem_usage=True,
-            torch_dtype=torch.float16 if self.device == "cuda" else torch.float32,
-        )
-        if self.device == "cpu":
-            self.model.to("cpu")
-
-    def generate(self, prompt: str, max_tokens: int = 512):
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
-        # generuj w trybie inference
-        with torch.inference_mode():
-            gen = self.model.generate(
-                **inputs,
-                max_new_tokens=max_tokens,
-                do_sample=True,
-                top_p=0.95,
-                temperature=0.7,
+    def __init__(self, model_name="llama3.2:latest", ollama_url=None):
+        """
+        Integracja z Ollama - wymaga uruchomionego Ollama serwera
+        Instalacja: https://ollama.com/download
+        Pobierz model: ollama pull llama3.2
+        """
+        self.model_name = model_name
+        self.ollama_url = ollama_url or os.getenv("OLLAMA_URL", "http://localhost:11434")
+        
+        # Sprawdź czy Ollama działa
+        try:
+            response = requests.get(f"{self.ollama_url}/api/tags", timeout=2)
+            if response.status_code == 200:
+                models = response.json().get("models", [])
+                print(f"✅ Ollama połączona - dostępne modele: {[m['name'] for m in models]}")
+                
+                # Jeśli model nie istnieje, użyj pierwszego dostępnego
+                if models and not any(m['name'].startswith(model_name.split(':')[0]) for m in models):
+                    self.model_name = models[0]['name']
+                    print(f"⚠️ Model {model_name} nie znaleziony, używam {self.model_name}")
+            else:
+                print(f"⚠️ Ollama odpowiada ale status: {response.status_code}")
+        except Exception as e:
+            print(f"❌ Ollama niedostępna: {e}")
+            print("💡 Uruchom: ollama serve")
+            print("💡 Pobierz model: ollama pull llama3.2")
+    
+    def generate(self, prompt: str, max_tokens: int = 512, temperature: float = 0.7, top_p: float = 0.9):
+        """Generuj tekst używając Ollama API"""
+        try:
+            response = requests.post(
+                f"{self.ollama_url}/api/generate",
+                json={
+                    "model": self.model_name,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "num_predict": max_tokens,
+                        "temperature": temperature,
+                        "top_p": top_p
+                    }
+                },
+                timeout=60
             )
-        out = self.tokenizer.decode(gen[0], skip_special_tokens=True)
-        # Zwracamy samą wygenerowaną część (możesz dopracować aby wyciąć prompt)
-        return out
+            
+            if response.status_code == 200:
+                return response.json().get("response", "Brak odpowiedzi z modelu")
+            else:
+                return f"❌ Błąd Ollama: {response.status_code} - {response.text}"
+                
+        except requests.exceptions.ConnectionError:
+            return "❌ Nie mogę połączyć z Ollama. Uruchom: ollama serve"
+        except Exception as e:
+            return f"❌ Błąd generowania: {str(e)}"

@@ -6,3 +6,4 @@ sqlalchemy
 pydantic
 requests  # Do web search (DuckDuckGo API)
 python-dotenv  # Do obsługi .env files
+python-multipart  # Do obsługi plików w FormData

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import uvicorn
 import os
@@ -11,25 +12,30 @@ from mcp_tools import mcp_registry, parse_tool_call_from_text
 from typing import List, Optional
 
 # Inicjalizacja
-app = FastAPI(title="Local AI Chat")
+app = FastAPI(title="JIMBO AI Chat - Ollama Backend")
 
 # CORS Configuration - umożliwia połączenia z frontendu
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,  # W produkcji ustaw konkretne domeny
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-model = LocalModel()  # ładuje model raz przy starcie
+print("🚀 Inicjalizacja JIMBO Backend z Ollama...")
+model = LocalModel(model_name="SpeakLeash/bielik-4.5b-v3.0-instruct:Q8_0")  # Polski model Bielik
 init_db()
+print("✅ Backend gotowy!")
 
 class ChatRequest(BaseModel):
     messages: List[dict]  # [{role: "user"|'assistant'|'system', text: "..."}]
     max_tokens: int = 512
     use_tools: bool = True  # Czy używać MCP tools
+    temperature: float = 0.8
+    top_p: float = 0.9
+    model_name: Optional[str] = None  # Jeśli None, używa domyślnego
 
 @app.get("/api/health")
 async def health_check():
@@ -56,61 +62,49 @@ async def list_tools():
 
 @app.post("/api/chat")
 async def chat(
-    messages: Optional[str] = Form(None),
-    files: List[UploadFile] = File(None),
-    req: Optional[ChatRequest] = None
+    messages: str = Form(...),
+    use_tools: bool = Form(True),
+    max_tokens: int = Form(512),
+    temperature: float = Form(0.8),
+    top_p: float = Form(0.9),
+    model_name: Optional[str] = Form(None),
+    custom_system_prompt: Optional[str] = Form(None),
+    files: List[UploadFile] = File(default=[])
 ):
     """
-    Główny endpoint czatu z obsługą MCP tools i file uploads
-
-    Obsługuje dwa formaty:
-    1. JSON (bez plików): {"messages": [...], "use_tools": true}
-    2. FormData (z plikami): messages (JSON string) + files (multipart)
+    Główny endpoint czatu z obsługą MCP tools, plików i Ollama
+    
+    FormData: messages (JSON string), files (opcjonalnie), temperature, top_p
     """
     db = None
     try:
-        # Określ format requesta
+        # Parse JSON messages
+        request_messages = json.loads(messages)
+        
+        # Obsługa przesłanych plików
         uploaded_files_info = []
-
-        if messages is not None:
-            # FormData format (z plikami)
-            parsed_messages = json.loads(messages)
-            use_tools = True
-            max_tokens = 512
-
-            # Przetwórz uploadowane pliki
-            if files:
-                upload_dir = os.getenv("MCP_SAFE_DIR", "./mcp_workspace") + "/uploads"
-                os.makedirs(upload_dir, exist_ok=True)
-
-                for file in files:
-                    file_path = os.path.join(upload_dir, file.filename)
-                    with open(file_path, "wb") as buffer:
-                        shutil.copyfileobj(file.file, buffer)
-
-                    uploaded_files_info.append({
-                        "filename": file.filename,
-                        "path": file_path,
-                        "size": os.path.getsize(file_path)
-                    })
-
-                # Dodaj info o plikach do prompt
-                files_info_text = "\n\n📎 Załączone pliki:\n" + "\n".join([
-                    f"- {f['filename']} ({f['size']} bytes) zapisany w {f['path']}"
-                    for f in uploaded_files_info
-                ])
-                # Dodaj do ostatniej wiadomości
-                if parsed_messages:
-                    parsed_messages[-1]["text"] += files_info_text
-
-            request_messages = parsed_messages
-        else:
-            # JSON format (bez plików)
-            if req is None:
-                raise HTTPException(status_code=400, detail="Missing request body")
-            request_messages = req.messages
-            use_tools = req.use_tools
-            max_tokens = req.max_tokens
+        if files:
+            upload_dir = "uploads"
+            os.makedirs(upload_dir, exist_ok=True)
+            for file in files:
+                file_path = os.path.join(upload_dir, file.filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                
+                # Przeczytaj zawartość (tylko txt/kod, max 10KB)
+                file_content = ""
+                if file.filename.endswith((".txt", ".py", ".js", ".md", ".json")):
+                    try:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            file_content = f.read(10000)  # max 10KB
+                    except:
+                        file_content = "[nie można odczytać pliku]"
+                
+                uploaded_files_info.append({
+                    "name": file.filename,
+                    "path": file_path,
+                    "content": file_content[:500]  # max 500 znaków w odpowiedzi
+                })
 
         db = SessionLocal()
         conv = Conversation()
@@ -123,24 +117,39 @@ async def chat(
             db.add(Message(conversation_id=conv.id, role=m.get("role"), content=m.get("text")))
         db.commit()
 
-        # Przygotuj prompt - jeśli tools enabled, dodaj instrukcję
+        # Przygotuj prompt z informacją o plikach
+        files_context = ""
+        if uploaded_files_info:
+            files_context = "\n\n📎 Załączone pliki:\n" + "\n".join([
+                f"- {f['name']}: {f['content'][:200]}..." for f in uploaded_files_info
+            ])
+
+        # Przygotuj prompt - użyj custom prompt jeśli podany, inaczej domyślny
         if use_tools:
-            system_prompt = f"""Jesteś pomocnym AI asystentem z dostępem do narzędzi MCP.
+            if custom_system_prompt:
+                # Użyj custom promptu z frontendu
+                system_prompt = f"{custom_system_prompt}{files_context}"
+            else:
+                # Domyślny prompt JIMBO
+                system_prompt = f"""Jesteś JIMBO - brutalnie szczery AI asystent dla programistów. Używasz modelu Bielik 4.5B przez Ollama.
 
-Dostępne narzędzia:
-{chr(10).join([f"- {t}: {mcp_registry.get_tool(t)['description']}" for t in mcp_registry.list_tools()])}
+ZASADY JIMBO:
+- Mówisz prawdę, nawet jeśli boli. Nie owijasz w bawełnę.
+- Zero marketingowego bełkotu, zero "coaching speak", zero udawania mentora.
+- Bonzo to twój partner - szanujesz go, ale nie lizujesz dupy.
+- Jeśli ktoś pisze słabe CV, powiesz to wprost + jak naprawić.
+- Konkretne przykłady zamiast ogólników.
+- Jeśli pytanie jest głupie, powiesz to (ale dasz odpowiedź).
 
-Aby użyć narzędzia, użyj składni: [TOOL:nazwa]argumenty[/TOOL]
-Przykład: [TOOL:calculator]2+2[/TOOL]
-
-Zawsze wyjaśnij użytkownikowi co robisz przed użyciem narzędzia."""
-
+Styl: Krótko, konkretnie, szczerze. Jak kolega programista, nie HR-owiec.{files_context}"""
             prompt = f"{system_prompt}\n\n" + "\n".join([f"{m['role']}: {m['text']}" for m in request_messages])
         else:
-            prompt = "\n".join([f"{m['role']}: {m['text']}" for m in request_messages])
+            prompt = "\n".join([f"{m['role']}: {m['text']}" for m in request_messages]) + files_context
 
-        # Generuj odpowiedź
-        out = model.generate(prompt, max_tokens=max_tokens)
+        # Generuj odpowiedź przez Ollama z przekazanymi parametrami
+        print(f"📤 Wysyłam do Ollama (temp={temperature}, top_p={top_p}): {prompt[:100]}...")
+        out = model.generate(prompt, max_tokens=max_tokens, temperature=temperature, top_p=top_p)
+        print(f"📥 Ollama odpowiedziała: {out[:100]}...")
 
         # Sprawdź czy są wywołania narzędzi
         tool_calls = []
@@ -166,13 +175,19 @@ Zawsze wyjaśnij użytkownikowi co robisz przed użyciem narzędzia."""
         db.add(Message(conversation_id=conv.id, role="assistant", content=out))
         db.commit()
 
-        return {
-            "text": out,
-            "tool_calls": tool_calls if tool_calls else [],
-            "uploaded_files": uploaded_files_info
-        }
+        return JSONResponse(
+            content={
+                "text": out,
+                "tool_calls": tool_calls if tool_calls else [],
+                "uploaded_files": [f["name"] for f in uploaded_files_info]
+            },
+            media_type="application/json; charset=utf-8"
+        )
 
     except Exception as e:
+        import traceback
+        print(f"❌ Błąd /api/chat: {e}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         if db:
