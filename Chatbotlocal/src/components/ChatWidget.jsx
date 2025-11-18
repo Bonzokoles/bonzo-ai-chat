@@ -22,12 +22,22 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [codeContent, setCodeContent] = useState("");
   const [codeLanguage, setCodeLanguage] = useState("python");
-  const [theme, setTheme] = useState(localStorage.getItem("chatTheme") || "light");
+  const [theme, setTheme] = useState("light");
   const [isExpanded, setIsExpanded] = useState(false);
 
   const controllerRef = useRef(null);
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
+
+  // Załaduj theme z localStorage (tylko w przeglądarce)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const savedTheme = localStorage.getItem("chatTheme");
+      if (savedTheme) {
+        setTheme(savedTheme);
+      }
+    }
+  }, []);
 
   // Auto-scroll do końca wiadomości
   useEffect(() => {
@@ -36,8 +46,10 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
 
   // Zapisz theme do localStorage
   useEffect(() => {
-    localStorage.setItem("chatTheme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem("chatTheme", theme);
+      document.documentElement.setAttribute("data-theme", theme);
+    }
   }, [theme]);
 
   // Sprawdź połączenie z backendem przy starcie
@@ -210,15 +222,15 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
 
   return (
     <div style={{
-      border: `1px solid ${colors.border}`,
-      borderRadius: 12,
+      border: "1px solid rgba(255, 51, 0, 0.5)",
+      borderRadius: 0,
       padding: 16,
-      width: isExpanded ? "90vw" : 500,
-      maxWidth: "100%",
-      background: colors.bg,
-      color: colors.text,
+      width: "95vw",
+      maxWidth: "95vw",
+      background: "rgba(0, 0, 102, 0.3)",
+      color: "rgba(0, 153, 238, 0.5)",
       transition: "all 0.3s ease",
-      boxShadow: theme === "dark" ? "0 4px 20px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.1)"
+      boxShadow: "0 4px 20px rgba(0,0,0,0.5)"
     }}>
       {/* Header with controls */}
       <div style={{
@@ -227,19 +239,19 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
         alignItems: "center",
         marginBottom: 12,
         paddingBottom: 12,
-        borderBottom: `1px solid ${colors.border}`
+        borderBottom: "1px solid rgba(255, 51, 0, 0.5)"
       }}>
-        <h3 style={{ margin: 0, fontSize: 18 }}>💬 MyBonzo AI Chat</h3>
+        <h3 style={{ margin: 0, fontSize: 18, color: "rgba(0, 153, 238, 0.5)" }}>💬 MyBonzo AI Chat</h3>
         <div style={{ display: "flex", gap: 8 }}>
           {/* Expand button */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             style={{
               padding: "6px 10px",
-              borderRadius: 6,
-              border: "none",
-              background: colors.surface,
-              color: colors.text,
+              borderRadius: 0,
+              border: "1px solid #ffff66",
+              background: "rgba(102, 0, 51, 0.3)",
+              color: "#0099ee",
               cursor: "pointer",
               fontSize: 16
             }}
@@ -253,10 +265,10 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
             onClick={toggleTheme}
             style={{
               padding: "6px 10px",
-              borderRadius: 6,
-              border: "none",
-              background: colors.surface,
-              color: colors.text,
+              borderRadius: 0,
+              border: "1px solid #ffff66",
+              background: "rgba(102, 0, 51, 0.3)",
+              color: "#0099ee",
               cursor: "pointer",
               fontSize: 16
             }}
@@ -270,10 +282,10 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
             onClick={clearChat}
             style={{
               padding: "6px 10px",
-              borderRadius: 6,
-              border: "none",
-              background: colors.surface,
-              color: colors.text,
+              borderRadius: 0,
+              border: "1px solid #ffff66",
+              background: "rgba(102, 0, 51, 0.3)",
+              color: "#0099ee",
               cursor: "pointer",
               fontSize: 16
             }}
@@ -291,8 +303,9 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
         gap: 8,
         marginBottom: 12,
         padding: 8,
-        background: colors.surface,
-        borderRadius: 6
+        background: "rgba(0, 0, 136, 0.5)",
+        borderRadius: 0,
+        border: "1px solid rgba(255, 51, 0, 0.5)"
       }}>
         <div style={{
           width: 10,
@@ -300,7 +313,7 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
           borderRadius: "50%",
           background: statusColors[connectionStatus]
         }} />
-        <span style={{ fontSize: 12, color: colors.textSecondary }}>
+        <span style={{ fontSize: 12, color: "#0099ee" }}>
           {connectionStatus === "connected" && "✓ Połączono z backendem"}
           {connectionStatus === "error" && "✗ Brak połączenia"}
           {connectionStatus === "unknown" && "⟳ Sprawdzanie..."}
@@ -313,12 +326,13 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
         overflowY: "auto",
         marginBottom: 12,
         padding: 8,
-        background: colors.surfaceLight,
-        borderRadius: 8
+        background: "rgba(0, 0, 102, 0.2)",
+        borderRadius: 0,
+        border: "1px solid rgba(255, 51, 0, 0.5)"
       }}>
         {messages.map((m) => (
           <div key={m.id} style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: colors.textSecondary, fontWeight: "bold", marginBottom: 4 }}>
+            <div style={{ fontSize: 12, color: "rgba(0, 153, 238, 0.5)", fontWeight: "bold", marginBottom: 4 }}>
               {m.role === "user" && "👤 Ty"}
               {m.role === "assistant" && "🤖 AI"}
               {m.role === "system" && "ℹ️ System"}
@@ -326,17 +340,13 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
               {m.role === "error" && "❌ Błąd"}
             </div>
             <div style={{
-              background:
-                m.role === "user" ? colors.userBubble :
-                m.role === "error" ? colors.errorBubble :
-                m.role === "tool" ? colors.toolBubble :
-                m.role === "system" ? colors.systemBubble :
-                colors.assistantBubble,
+              background: "rgba(0, 0, 136, 0.5)",
+              border: "1px solid rgba(255, 51, 0, 0.5)",
               padding: 12,
-              borderRadius: 8,
+              borderRadius: 0,
               whiteSpace: "pre-wrap",
               wordBreak: "break-word",
-              color: m.role === "user" && theme === "light" ? "#000" : colors.text
+              color: "rgba(0, 153, 238, 0.5)"
             }}>
               {m.text}
               {m.files && m.files.length > 0 && (
@@ -355,10 +365,11 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
         <div style={{
           marginBottom: 12,
           padding: 8,
-          background: colors.surface,
-          borderRadius: 6
+          background: "rgba(0, 0, 136, 0.5)",
+          borderRadius: 0,
+          border: "1px solid rgba(255, 51, 0, 0.5)"
         }}>
-          <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 6 }}>📎 Załączone pliki:</div>
+          <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 6, color: "rgba(0, 153, 238, 0.5)" }}>📎 Załączone pliki:</div>
           {uploadedFiles.map((file, idx) => (
             <div key={idx} style={{
               display: "flex",
@@ -366,18 +377,19 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
               alignItems: "center",
               padding: 4,
               marginBottom: 4,
-              background: colors.surfaceLight,
-              borderRadius: 4
+              background: "rgba(0, 0, 136, 0.5)",
+              borderRadius: 0,
+              border: "1px solid rgba(255, 51, 0, 0.5)"
             }}>
-              <span style={{ fontSize: 12 }}>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+              <span style={{ fontSize: 12, color: "rgba(0, 153, 238, 0.5)" }}>{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
               <button
                 onClick={() => removeFile(idx)}
                 style={{
                   padding: "2px 6px",
-                  borderRadius: 4,
-                  border: "none",
-                  background: colors.errorBubble,
-                  color: "#fff",
+                  borderRadius: 0,
+                  border: "1px solid rgba(255, 255, 102, 0.5)",
+                  background: "rgba(102, 0, 51, 0.3)",
+                  color: "rgba(0, 153, 238, 0.5)",
                   cursor: "pointer",
                   fontSize: 11
                 }}
@@ -394,9 +406,9 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
         <div style={{
           marginBottom: 12,
           padding: 12,
-          background: colors.surface,
-          borderRadius: 8,
-          border: `1px solid ${colors.border}`
+          background: "rgba(0, 0, 136, 0.5)",
+          borderRadius: 0,
+          border: "1px solid rgba(255, 51, 0, 0.5)"
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
             <select
@@ -404,10 +416,10 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
               onChange={(e) => setCodeLanguage(e.target.value)}
               style={{
                 padding: 6,
-                borderRadius: 4,
-                border: `1px solid ${colors.border}`,
-                background: colors.surfaceLight,
-                color: colors.text
+                borderRadius: 0,
+                border: "1px solid rgba(255, 255, 102, 0.5)",
+                background: "rgba(0, 0, 136, 0.5)",
+                color: "rgba(0, 153, 238, 0.5)"
               }}
             >
               <option value="python">Python</option>
@@ -422,10 +434,10 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
               onClick={() => setShowCodeEditor(false)}
               style={{
                 padding: "4px 8px",
-                borderRadius: 4,
-                border: "none",
-                background: colors.errorBubble,
-                color: "#fff",
+                borderRadius: 0,
+                border: "1px solid rgba(255, 255, 102, 0.5)",
+                background: "rgba(102, 0, 51, 0.3)",
+                color: "rgba(0, 153, 238, 0.5)",
                 cursor: "pointer"
               }}
             >
@@ -440,12 +452,12 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
               width: "100%",
               minHeight: 150,
               padding: 8,
-              borderRadius: 4,
-              border: `1px solid ${colors.border}`,
+              borderRadius: 0,
+              border: "1px solid rgba(255, 51, 0, 0.5)",
               fontFamily: "monospace",
               fontSize: 13,
-              background: theme === "dark" ? "#1e1e1e" : "#f5f5f5",
-              color: colors.text,
+              background: "rgba(0, 0, 136, 0.5)",
+              color: "rgba(0, 153, 238, 0.5)",
               resize: "vertical"
             }}
           />
@@ -454,10 +466,10 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
             style={{
               marginTop: 8,
               padding: "8px 16px",
-              borderRadius: 6,
-              border: "none",
-              background: colors.buttonBg,
-              color: "white",
+              borderRadius: 0,
+              border: "1px solid #ffff66",
+              background: "rgba(102, 0, 51, 0.3)",
+              color: "#0099ee",
               cursor: "pointer",
               fontWeight: "bold"
             }}
@@ -477,12 +489,12 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
           width: "100%",
           marginBottom: 8,
           padding: 10,
-          borderRadius: 8,
-          border: `1px solid ${colors.border}`,
+          borderRadius: 0,
+          border: "1px solid rgba(255, 51, 0, 0.5)",
           fontFamily: "inherit",
           fontSize: 14,
-          background: colors.surfaceLight,
-          color: colors.text,
+          background: "rgba(0, 0, 136, 0.5)",
+          color: "rgba(0, 153, 238, 0.5)",
           resize: "vertical"
         }}
         placeholder="Napisz wiadomość... (Enter = wyślij, Shift+Enter = nowa linia)"
@@ -499,24 +511,14 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
             flex: 1,
             minWidth: 120,
             padding: 12,
-            borderRadius: 8,
-            border: "none",
-            background: loading ? "#ccc" : colors.buttonBg,
-            color: "white",
+            borderRadius: 0,
+            border: "1px solid rgba(255, 255, 102, 0.5)",
+            background: loading ? "rgba(204, 204, 204, 0.5)" : "rgba(102, 0, 51, 0.3)",
+            color: "rgba(0, 153, 238, 0.5)",
             fontWeight: "bold",
             cursor: loading || connectionStatus === "error" ? "not-allowed" : "pointer",
             fontSize: 14,
             transition: "all 0.2s"
-          }}
-          onMouseEnter={(e) => {
-            if (!loading && connectionStatus === "connected") {
-              e.target.style.background = colors.buttonHover;
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!loading) {
-              e.target.style.background = colors.buttonBg;
-            }
           }}
         >
           {loading ? "⏳ Wysyłanie..." : "📤 Wyślij"}
@@ -528,10 +530,10 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
           disabled={loading}
           style={{
             padding: 12,
-            borderRadius: 8,
-            border: "none",
-            background: colors.surface,
-            color: colors.text,
+            borderRadius: 0,
+            border: "1px solid rgba(255, 255, 102, 0.5)",
+            background: "rgba(102, 0, 51, 0.3)",
+            color: "rgba(0, 153, 238, 0.5)",
             cursor: loading ? "not-allowed" : "pointer",
             fontWeight: "bold",
             fontSize: 14
@@ -555,10 +557,10 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
           disabled={loading}
           style={{
             padding: 12,
-            borderRadius: 8,
-            border: "none",
-            background: colors.surface,
-            color: colors.text,
+            borderRadius: 0,
+            border: "1px solid rgba(255, 255, 102, 0.5)",
+            background: "rgba(102, 0, 51, 0.3)",
+            color: "rgba(0, 153, 238, 0.5)",
             cursor: loading ? "not-allowed" : "pointer",
             fontWeight: "bold",
             fontSize: 14
@@ -573,10 +575,11 @@ export default function ChatWidget({ apiBaseUrl = "/api" }) {
       <div style={{
         marginTop: 12,
         padding: 8,
-        background: colors.surface,
-        borderRadius: 6,
+        background: "rgba(0, 0, 136, 0.5)",
+        borderRadius: 0,
+        border: "1px solid rgba(255, 51, 0, 0.5)",
         fontSize: 11,
-        color: colors.textSecondary,
+        color: "rgba(0, 153, 238, 0.5)",
         textAlign: "center"
       }}>
         💡 Wskazówka: Możesz zainstalować tę aplikację na swoim urządzeniu (Android/iOS)
