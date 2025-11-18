@@ -1,17 +1,17 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
-import cloudflare from '@astrojs/cloudflare';
 
+// Electron desktop app - static build
+// For Cloudflare deployment, switch to 'server' with cloudflare adapter
 export default defineConfig({
-    output: 'server',
-    adapter: cloudflare({
-        mode: 'directory',
-        functionPerRoute: false
-    }),
+    output: 'static',
     integrations: [react()],
     vite: {
         ssr: {
             external: ['node:async_hooks']
         }
+    },
+    build: {
+        inlineStylesheets: 'auto'
     }
 });
