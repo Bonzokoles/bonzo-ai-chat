@@ -50,6 +50,7 @@ const S = {
   pendingTermCmd: null,
   recognition: null,
   isRecording: false,
+  sessionTokens: 0,
 };
 
 const THEMES = ['bugatti', 'hashicorp', 'midnight', 'blackout'];
@@ -234,6 +235,16 @@ async function checkHealth() {
       if (pingEl) pingEl.textContent = `${latency}ms`;
       const badge = $('conn-badge');
       if (badge) badge.style.borderColor = '#00E6A8';
+
+      // Update Sidebar Telemetry LEDs
+      const ledKey = $('led-key-status');
+      const ledAi = $('led-ai-status');
+      const ledMesh = $('led-mesh-status');
+      const ledD1 = $('led-d1-status');
+      if (ledKey) ledKey.textContent = d.key_tier || 'ROOT 2026';
+      if (ledAi) ledAi.textContent = 'ONLINE (CF)';
+      if (ledMesh) ledMesh.textContent = `${d.mesh_nodes || 6} PROVIDERS`;
+      if (ledD1) ledD1.textContent = 'CONNECTED';
     } else throw new Error('bad status');
   } catch {
     if (el.statusDot) {
@@ -249,6 +260,11 @@ async function checkHealth() {
     if (pingEl) pingEl.textContent = 'ERR';
     const badge = $('conn-badge');
     if (badge) badge.style.borderColor = '#ef4444';
+
+    const ledAi = $('led-ai-status');
+    if (ledAi) ledAi.textContent = 'OFFLINE';
+    const ledMesh = $('led-mesh-status');
+    if (ledMesh) ledMesh.textContent = 'STANDALONE';
   }
 }
 
@@ -330,6 +346,25 @@ async function loadTaskProfiles() {
   }
 }
 
+// ── Token Telemetry ────────────────────────────────────────────────────────
+function updateTokenTelemetry(addedTokens = 0, speed = 0) {
+  S.sessionTokens = (S.sessionTokens || 0) + addedTokens;
+  const countEl = $('sb-tokens-count');
+  const fillEl = $('sb-token-fill');
+  const speedEl = $('sb-token-est');
+  if (countEl) {
+    const k = S.sessionTokens >= 1000 ? (S.sessionTokens / 1000).toFixed(1) + 'k' : S.sessionTokens;
+    countEl.textContent = `${k} / 50k`;
+  }
+  if (fillEl) {
+    const pct = Math.min(100, Math.round((S.sessionTokens / 50000) * 100));
+    fillEl.style.width = `${Math.max(2, pct)}%`;
+  }
+  if (speedEl && speed > 0) {
+    speedEl.textContent = `~${speed} T/s`;
+  }
+}
+
 // ── API Chat ───────────────────────────────────────────────────────────────
 async function sendMessage(text, files = []) {
   if (S.isLoading) return;
@@ -348,6 +383,12 @@ async function sendMessage(text, files = []) {
   renderMessage(userMsg);
   autoSaveConversation();
   scrollBottom();
+
+  // Track tokens for prompt
+  const userToks = Math.max(1, Math.round((text.length + files.length * 120) / 3.8));
+  updateTokenTelemetry(userToks, 0);
+  const streamStartTime = performance.now();
+  let generatedChars = 0;
 
   // Show typing
   el.typing.classList.add('visible');
@@ -412,6 +453,7 @@ async function sendMessage(text, files = []) {
           const ev = JSON.parse(line.slice(6));
           if (ev.type === 'chunk') {
             assistantMsg.text += ev.text;
+            generatedChars += ev.text.length;
             textEl.innerHTML = renderMarkdown(assistantMsg.text);
             scrollBottom();
             } else if (ev.type === 'done') {
@@ -430,6 +472,12 @@ async function sendMessage(text, files = []) {
             assistantMsg.taskProfileLabel = ev.task_profile_label || '';
             textEl.innerHTML = renderMarkdown(assistantMsg.text);
             refreshMessageMeta(bubble, assistantMsg);
+
+            // Compute generation speed and completion tokens
+            const completionToks = Math.max(1, Math.round(generatedChars / 3.8));
+            const elapsed = Math.max(0.1, (performance.now() - streamStartTime) / 1000);
+            const tokPerSec = Math.round(completionToks / elapsed);
+            updateTokenTelemetry(completionToks, tokPerSec);
           }
         } catch {}
       }
@@ -642,10 +690,34 @@ function escapeHtml(s) {
 }
 
 // ── Conversations ───────────────────────────────────────────────────────────
+function isJunkConversation(conv) {
+  if (!conv || !hasMeaningfulMessages(conv.messages)) return true;
+  const title = (conv.title || '').trim().toLowerCase();
+  if (
+    title.includes('chatboxjimbo') ||
+    title.startsWith('>>') ||
+    title.startsWith('start m:') ||
+    title.includes('ps m:') ||
+    title.includes('m:\\chatboxjimbo')
+  ) {
+    return true;
+  }
+  const firstMsg = (conv.messages[0]?.text || '').trim().toLowerCase();
+  if (
+    firstMsg.includes('chatboxjimbo') ||
+    firstMsg.startsWith('>> start') ||
+    firstMsg.startsWith('ps m:\\')
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function loadConversations() {
   try {
     S.conversations = JSON.parse(readStored('eastwood-convs', 'jimbo-convs', '[]'));
     pruneConversations();
+    saveConversations();
   } catch { S.conversations = []; }
 }
 
@@ -662,7 +734,7 @@ function hasMeaningfulMessages(messages) {
 }
 
 function pruneConversations() {
-  S.conversations = S.conversations.filter(c => hasMeaningfulMessages(c.messages));
+  S.conversations = S.conversations.filter(c => !isJunkConversation(c));
 }
 
 function autoSaveConversation() {
@@ -725,7 +797,7 @@ function deleteConversation(id) {
 
 function renderHistory() {
   el.historyList.innerHTML = '';
-  const items = S.conversations.filter(c => hasMeaningfulMessages(c.messages)).slice(0, 3);
+  const items = S.conversations.filter(c => !isJunkConversation(c)).slice(0, 3);
   items.forEach(conv => {
     const d = document.createElement('div');
     d.className = 'hist-item' + (conv.id === S.activeConvId ? ' active' : '');
@@ -1675,12 +1747,83 @@ function setupEventListeners() {
     pruneConversations();
     saveConversations();
     renderHistory();
-    addSystemMsg('Historia oczyszczona: zostawiono tylko sensowne rozmowy.');
+    addSystemMsg('Historia oczyszczona: usunięto niepoprawne wpisy.');
   });
   $('btn-export-json-sb').addEventListener('click', exportJSON);
   $('btn-clear-chat-sb').addEventListener('click', () => {
     if (confirm('Wyczyścić aktywny chat?')) clearChat();
   });
+
+  // Sidebar Quick Tools Buttons
+  const btnHub = $('sb-btn-hub');
+  if (btnHub) {
+    btnHub.addEventListener('click', () => {
+      if (window.BonzoAddons && window.BonzoAddons.toggleDrawer) {
+        if (!window.BonzoAddons.State.drawerOpen) window.BonzoAddons.toggleDrawer();
+        window.BonzoAddons.switchTab('music');
+      } else {
+        addSystemMsg('[HUB] Media & Kino: Inicjalizacja katalogu...');
+      }
+    });
+  }
+
+  const btnRadio = $('sb-btn-radio');
+  if (btnRadio) {
+    btnRadio.addEventListener('click', () => {
+      if (window.BonzoAddons && window.BonzoAddons.toggleDrawer) {
+        if (!window.BonzoAddons.State.drawerOpen) window.BonzoAddons.toggleDrawer();
+        window.BonzoAddons.switchTab('radio');
+      } else {
+        addSystemMsg('[RADIO] Live Stream: Inicjalizacja stacji...');
+      }
+    });
+  }
+
+  const btnWeather = $('sb-btn-weather');
+  if (btnWeather) {
+    btnWeather.addEventListener('click', () => {
+      if (window.BonzoAddons && window.BonzoAddons.toggleDrawer) {
+        if (!window.BonzoAddons.State.drawerOpen) window.BonzoAddons.toggleDrawer();
+        window.BonzoAddons.switchTab('fun');
+        if (window.BonzoAddons.loadWeather) window.BonzoAddons.loadWeather('Warszawa');
+      } else {
+        addSystemMsg('[METEO] Pogoda Live: Odświeżanie prognozy...');
+      }
+    });
+  }
+
+  const btnImage = $('sb-btn-image');
+  if (btnImage) {
+    btnImage.addEventListener('click', () => {
+      if (window.BonzoAddons && window.BonzoAddons.toggleDrawer) {
+        if (!window.BonzoAddons.State.drawerOpen) window.BonzoAddons.toggleDrawer();
+        window.BonzoAddons.switchTab('fun');
+        const p = document.getElementById('bad-img-prompt');
+        if (p) {
+          p.focus();
+          p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      } else {
+        addSystemMsg('[FLUX] Generator AI: Otwieranie generatora...');
+      }
+    });
+  }
+
+  const btnTerm = $('sb-btn-term');
+  if (btnTerm) {
+    btnTerm.addEventListener('click', () => {
+      toggleTerminal();
+    });
+  }
+
+  const btnReset = $('sb-btn-reset');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      if (confirm('Zresetować sesję i otworzyć nowy czat?')) {
+        newConversation(false);
+      }
+    });
+  }
 
   // Theme
   $('btn-theme').addEventListener('click', cycleTheme);

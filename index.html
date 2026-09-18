@@ -7,6 +7,7 @@
 <link rel="icon" href="/favicon.ico" type="image/x-icon">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link rel="stylesheet" href="addons/bonzo_addons.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,15 +15,15 @@
 @font-face { font-family: "CascadiaMonoLocal"; src: url("themes/CascadiaMono.ttf") format("truetype"); font-display: swap; }
 @font-face { font-family: "VerdanaLocal"; src: url("themes/verdana.ttf") format("truetype"); font-display: swap; }
 :root {
-  --bg:#0a0d14; --bg2:#0f1420; --bg3:#131a29; --bg4:#182235;
-  --border:#21314f; --border2:#2a3f66; --accent:#79c0ff; --accent2:#3f91d9;
-  --text:#dce9ff; --text2:#8ea3c4; --text3:#5a6e8d; --user-bg:#0f1e35;
-  --danger:#d55a6f; --ok:#4cb685;
+  --bg:#04060a; --bg2:#070a10; --bg3:#0b0f17; --bg4:#101520;
+  --border:#141a26; --border2:#1e2738; --accent:#79c0ff; --accent2:#3f91d9;
+  --text:#f1f5f9; --text2:#8ea3c4; --text3:#475569; --user-bg:#070d1a;
+  --danger:#d55a6f; --ok:#00E6A8;
 }
-html[data-theme="bugatti"] { --bg:#030409; --bg2:#090b11; --bg3:#0e121a; --bg4:#151a24; --border:#39445b; --border2:#5d6b8c; --accent:#8f9cff; --accent2:#7787f0; --text:#f5f7ff; --text2:#c2cbe0; --text3:#8b97b3; --user-bg:#0b1326; }
-html[data-theme="hashicorp"] { --bg:#0a0602; --bg2:#14100b; --bg3:#1d150e; --bg4:#271c12; --border:#4d3320; --border2:#8d5a2f; --accent:#ff9d2f; --accent2:#ffd08f; --text:#fff1dd; --text2:#e4bc8d; --text3:#b98958; --user-bg:#1b120a; }
-html[data-theme="midnight"] { --bg:#02060c; --bg2:#050b14; --bg3:#08111d; --bg4:#0c1627; --border:#1f3b63; --border2:#2f5f99; --accent:#2ee6ff; --accent2:#89f2ff; --text:#ddf8ff; --text2:#95d9e6; --text3:#5aa0b0; --user-bg:#07101b; }
-html[data-theme="blackout"] { --bg:#000000; --bg2:#050505; --bg3:#0a0a0a; --bg4:#101010; --border:#2f2f2f; --border2:#555555; --accent:#ffffff; --accent2:#cccccc; --text:#ffffff; --text2:#d5d5d5; --text3:#a8a8a8; --user-bg:#090909; }
+html[data-theme="bugatti"] { --bg:#020306; --bg2:#05070c; --bg3:#080b12; --bg4:#0d111a; --border:#151d2b; --border2:#1f2b3e; --accent:#7b8af0; --accent2:#6574df; --text:#f5f7ff; --text2:#a3b0c9; --text3:#52607d; --user-bg:#050914; }
+html[data-theme="hashicorp"] { --bg:#060402; --bg2:#0b0805; --bg3:#120c08; --bg4:#18100a; --border:#332014; --border2:#55341c; --accent:#ff9d2f; --accent2:#ffd08f; --text:#fff1dd; --text2:#e4bc8d; --text3:#9e7346; --user-bg:#0e0804; }
+html[data-theme="midnight"] { --bg:#010307; --bg2:#03060c; --bg3:#050a14; --bg4:#07101e; --border:#122138; --border2:#1c3558; --accent:#2ee6ff; --accent2:#89f2ff; --text:#ddf8ff; --text2:#95d9e6; --text3:#488392; --user-bg:#030811; }
+html[data-theme="blackout"] { --bg:#000000; --bg2:#030303; --bg3:#060606; --bg4:#0a0a0a; --border:#181818; --border2:#282828; --accent:#ffffff; --accent2:#cccccc; --text:#ffffff; --text2:#c8c8c8; --text3:#666666; --user-bg:#040404; }
 
 *{box-sizing:border-box;margin:0;padding:0;border-radius:0!important}
 html,body{height:100%;overflow:hidden}
@@ -35,20 +36,20 @@ body{
 html[data-theme="blackout"] body{
   background: var(--bg);
 }
-html[data-theme="bugatti"] #topbar{background:linear-gradient(90deg,#090b11,#121726)}
-html[data-theme="hashicorp"] #topbar{background:linear-gradient(90deg,#14100b,#261908)}
-html[data-theme="midnight"] #topbar{background:linear-gradient(90deg,#050b14,#0b1b30)}
-html[data-theme="blackout"] #topbar{background:linear-gradient(90deg,#050505,#0b0b0b)}
+html[data-theme="bugatti"] #topbar{background:linear-gradient(90deg,#04060b,#080c14)}
+html[data-theme="hashicorp"] #topbar{background:linear-gradient(90deg,#0b0805,#1c1106)}
+html[data-theme="midnight"] #topbar{background:linear-gradient(90deg,#03060c,#071222)}
+html[data-theme="blackout"] #topbar{background:linear-gradient(90deg,#030303,#080808)}
 
-html[data-theme="bugatti"] #chat-main{background:linear-gradient(180deg,rgba(12,16,28,.9),rgba(6,8,14,.96))}
-html[data-theme="hashicorp"] #chat-main{background:linear-gradient(180deg,rgba(30,20,10,.92),rgba(16,10,6,.96))}
-html[data-theme="midnight"] #chat-main{background:linear-gradient(180deg,rgba(6,16,28,.92),rgba(3,9,16,.97))}
-html[data-theme="blackout"] #chat-main{background:linear-gradient(180deg,rgba(6,6,6,.95),rgba(1,1,1,.98))}
+html[data-theme="bugatti"] #chat-main{background:linear-gradient(180deg,rgba(6,8,13,.97),rgba(2,3,6,.99))}
+html[data-theme="hashicorp"] #chat-main{background:linear-gradient(180deg,rgba(20,12,6,.95),rgba(10,6,3,.98))}
+html[data-theme="midnight"] #chat-main{background:linear-gradient(180deg,rgba(4,9,18,.96),rgba(1,3,7,.99))}
+html[data-theme="blackout"] #chat-main{background:linear-gradient(180deg,rgba(3,3,3,.98),rgba(0,0,0,1))}
 
-html[data-theme="bugatti"] #input-area, html[data-theme="bugatti"] #sidebar, html[data-theme="bugatti"] #rightbar, html[data-theme="bugatti"] #term-panel{background:var(--bg2)}
-html[data-theme="hashicorp"] #input-area, html[data-theme="hashicorp"] #sidebar, html[data-theme="hashicorp"] #rightbar, html[data-theme="hashicorp"] #term-panel{background:#120e09}
-html[data-theme="midnight"] #input-area, html[data-theme="midnight"] #sidebar, html[data-theme="midnight"] #rightbar, html[data-theme="midnight"] #term-panel{background:#07101b}
-html[data-theme="blackout"] #input-area, html[data-theme="blackout"] #sidebar, html[data-theme="blackout"] #rightbar, html[data-theme="blackout"] #term-panel{background:#050505}
+html[data-theme="bugatti"] #input-area, html[data-theme="bugatti"] #sidebar, html[data-theme="bugatti"] #rightbar, html[data-theme="bugatti"] #term-panel{background:#05070c}
+html[data-theme="hashicorp"] #input-area, html[data-theme="hashicorp"] #sidebar, html[data-theme="hashicorp"] #rightbar, html[data-theme="hashicorp"] #term-panel{background:#0b0805}
+html[data-theme="midnight"] #input-area, html[data-theme="midnight"] #sidebar, html[data-theme="midnight"] #rightbar, html[data-theme="midnight"] #term-panel{background:#03060c}
+html[data-theme="blackout"] #input-area, html[data-theme="blackout"] #sidebar, html[data-theme="blackout"] #rightbar, html[data-theme="blackout"] #term-panel{background:#030303}
 button,input,select,textarea{font-family:inherit;color:var(--text)}
 button{background:none;border:1px solid var(--border2);padding:5px 10px;cursor:pointer}
 button:hover{border-color:var(--accent);color:var(--accent)}
@@ -78,17 +79,149 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 #app.right-collapsed #main{grid-template-columns:260px minmax(0,1fr) 0}
 #app.left-collapsed.right-collapsed #main{grid-template-columns:minmax(0,1fr)}
 
-#sidebar{min-height:0;overflow:auto;background:var(--bg2);border-right:1px solid var(--border)}
+#sidebar{min-height:0;overflow-y:auto;overflow-x:hidden;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column}
 #app.left-collapsed #sidebar{display:none}
 .sb-section{padding:10px;border-bottom:1px solid var(--border)}
 .sb-title{font-size:10px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .sb-body.collapsed{display:none}
 .toggle-icon{cursor:pointer}
 #btn-new-chat-sb{width:100%;margin-bottom:8px}
-#history-list{display:flex;flex-direction:column;gap:6px}
-.hist-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.hist-tool-btn{border:1px solid var(--border2);padding:3px 8px;font-size:10px;color:var(--text2);cursor:pointer}
+#history-list{display:flex;flex-direction:column;gap:5px}
+.hist-item{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#060a12;border:1px solid #162032;font-size:11px;color:#94a3b8;cursor:pointer;border-radius:0px!important;transition:all .15s ease}
+.hist-item:hover{border-color:var(--accent);color:#ffffff;background:#0b1120}
+.hist-item.active{border-color:#00E6A8;background:#071518;color:#00E6A8}
+.hist-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-del{margin-left:6px;font-size:10px;color:#64748b;padding:0 3px}
+.hist-del:hover{color:#ef4444}
+.hist-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.hist-tool-btn{border:1px solid var(--border2);padding:3px 8px;font-size:10px;color:var(--text2);cursor:pointer;background:#060a12}
 .hist-tool-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Sidebar Rectangular Tool Buttons (High-Precision Dark-Technical) */
+.sb-tool-grid{display:flex;flex-direction:column;gap:5px}
+.sb-rect-btn{
+  width:100%;
+  padding:7px 10px;
+  background:#060910!important;
+  border:1px solid #1c2638!important;
+  color:#dce4f0!important;
+  font-family:inherit!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  letter-spacing:0.06em!important;
+  text-align:left;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  border-radius:0px!important;
+  transition:all 0.15s ease;
+}
+.sb-rect-btn:hover{
+  border-color:#00e5ff!important;
+  background:#0e1524!important;
+  color:#ffffff!important;
+  box-shadow:0 0 8px rgba(0,229,255,0.15);
+}
+.sb-rect-tag{
+  color:#d4a574;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:0.08em;
+}
+
+/* Key Connection LEDs & Live Token Telemetry */
+.sb-telemetry-panel{
+  background:#04060b;
+  border:1px solid #161d2a;
+  padding:8px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  font-family:'JetBrains Mono',monospace;
+}
+.sb-led-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:10px;
+}
+.sb-led-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#8ea3c4;
+  font-weight:600;
+  letter-spacing:0.04em;
+}
+.sb-led-val{
+  font-size:9px;
+  color:#5aa0b0;
+  letter-spacing:0.06em;
+  font-weight:600;
+  text-transform:uppercase;
+}
+.sb-led-dot{
+  width:6px;
+  height:6px;
+  border-radius:0px!important;
+  display:inline-block;
+}
+.dot-active{
+  background:#00E6A8;
+  box-shadow:0 0 6px #00E6A8;
+  animation:ledBlink 2.2s infinite;
+}
+.dot-active-cyan{
+  background:#00e5ff;
+  box-shadow:0 0 6px #00e5ff;
+}
+.dot-active-gold{
+  background:#d4a574;
+  box-shadow:0 0 6px #d4a574;
+}
+.dot-active-green{
+  background:#4cb685;
+  box-shadow:0 0 6px #4cb685;
+}
+@keyframes ledBlink{
+  0%,100%{opacity:0.4;transform:scale(0.95)}
+  50%{opacity:1;transform:scale(1.1)}
+}
+
+.sb-token-gauge-wrap{
+  margin-top:4px;
+  padding-top:6px;
+  border-top:1px solid #141b26;
+}
+.sb-token-gauge-header{
+  display:flex;
+  justify-content:space-between;
+  font-size:9px;
+  letter-spacing:0.08em;
+  color:#64748b;
+  margin-bottom:4px;
+}
+.sb-token-bar{
+  height:4px;
+  background:#080d16;
+  border:1px solid #161d2a;
+  position:relative;
+  overflow:hidden;
+}
+.sb-token-fill{
+  height:100%;
+  background:linear-gradient(90deg,#00E6A8,#00e5ff);
+  width:2%;
+  transition:width 0.3s ease;
+}
+.sb-token-footer{
+  display:flex;
+  justify-content:space-between;
+  font-size:9px;
+  color:#5aa0b0;
+  margin-top:4px;
+}
 
 #chat-main{display:flex;flex-direction:column;min-height:0;background:linear-gradient(180deg,rgba(12,16,28,.9),rgba(6,8,14,.96));position:relative}
 #chat-main::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent 0%,rgba(123,136,240,.05) 45%,transparent 100%);transform:skewX(-10deg) translateX(18%)}
@@ -182,14 +315,75 @@ pre{padding:26px 10px 10px;overflow:auto}
 
   <div id="main">
     <aside id="sidebar">
-      <div class="sb-section">
-        <button id="btn-new-chat-sb">NEW CHAT</button>
-        <div class="sb-title">HISTORY</div>
-        <div id="history-list"></div>
-        <div class="hist-tools">
-          <button class="hist-tool-btn" id="btn-history-prune">PRUNE</button>
-          <button class="hist-tool-btn" id="btn-export-json-sb">EXPORT</button>
-          <button class="hist-tool-btn" id="btn-clear-chat-sb">CLEAR</button>
+      <div style="flex-shrink:0;">
+        <div class="sb-section" style="padding-bottom:8px;">
+          <button id="btn-new-chat-sb">NEW CHAT</button>
+          <div class="sb-title">HISTORY</div>
+          <div id="history-list"></div>
+          <div class="hist-tools">
+            <button class="hist-tool-btn" id="btn-history-prune">PRUNE</button>
+            <button class="hist-tool-btn" id="btn-export-json-sb">EXPORT</button>
+            <button class="hist-tool-btn" id="btn-clear-chat-sb">CLEAR</button>
+          </div>
+        </div>
+
+        <div class="sb-section" id="sb-tools-section">
+          <div class="sb-title">NARZĘDZIA / QUICK TOOLS</div>
+          <div class="sb-tool-grid">
+            <button class="sb-rect-btn" id="sb-btn-hub" title="Bonzo Media Hub: Muzyka &amp; Kino">
+              <span class="sb-rect-tag">[HUB]</span> MEDIA &amp; KINO
+            </button>
+            <button class="sb-rect-btn" id="sb-btn-radio" title="Stacje radiowe online na żywo">
+              <span class="sb-rect-tag">[RADIO]</span> LIVE STREAM
+            </button>
+            <button class="sb-rect-btn" id="sb-btn-weather" title="Pogoda na żywo (Open-Meteo)">
+              <span class="sb-rect-tag">[METEO]</span> POGODA LIVE
+            </button>
+            <button class="sb-rect-btn" id="sb-btn-image" title="Generator obrazów AI (FLUX / Pollinations)">
+              <span class="sb-rect-tag">[FLUX]</span> GENERATOR AI
+            </button>
+            <button class="sb-rect-btn" id="sb-btn-term" title="Natywny terminal PowerShell 7 &amp; Agent Pi">
+              <span class="sb-rect-tag">[CLI]</span> TERMINAL / PI
+            </button>
+            <button class="sb-rect-btn" id="sb-btn-reset" title="Wyczyść i zresetuj czat">
+              <span class="sb-rect-tag" style="color:var(--danger);">[RESET]</span> RESET SESJI
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-section" id="sb-telemetry-section" style="border-bottom:none; border-top:1px solid var(--border); margin-top:auto; flex-shrink:0;">
+        <div class="sb-title">TELEMETRIA KLUCZY &amp; TOKENÓW</div>
+        <div class="sb-telemetry-panel">
+          <div class="sb-led-row">
+            <div class="sb-led-label"><span class="sb-led-dot dot-active"></span> HOTSPOT KEY</div>
+            <span class="sb-led-val" id="led-key-status">ROOT 2026</span>
+          </div>
+          <div class="sb-led-row">
+            <div class="sb-led-label"><span class="sb-led-dot dot-active-cyan"></span> WORKERS AI</div>
+            <span class="sb-led-val" id="led-ai-status">ONLINE (CF)</span>
+          </div>
+          <div class="sb-led-row">
+            <div class="sb-led-label"><span class="sb-led-dot dot-active-gold"></span> UPSTREAM MESH</div>
+            <span class="sb-led-val" id="led-mesh-status">6 PROVIDERS</span>
+          </div>
+          <div class="sb-led-row">
+            <div class="sb-led-label"><span class="sb-led-dot dot-active-green"></span> D1 DATABASE</div>
+            <span class="sb-led-val" id="led-d1-status">CONNECTED</span>
+          </div>
+          <div class="sb-token-gauge-wrap">
+            <div class="sb-token-gauge-header">
+              <span>TOKENY SESJI</span>
+              <span id="sb-tokens-count">0 / 50k</span>
+            </div>
+            <div class="sb-token-bar">
+              <div class="sb-token-fill" id="sb-token-fill" style="width: 2%;"></div>
+            </div>
+            <div class="sb-token-footer">
+              <span>TIER: <strong id="sb-token-tier" style="color:#00E6A8;">ROOT</strong></span>
+              <span id="sb-token-ping">PING: --ms</span>
+            </div>
+          </div>
         </div>
       </div>
     </aside>
@@ -424,5 +618,6 @@ pre{padding:26px 10px 10px;overflow:auto}
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="app.js"></script>
+<script src="addons/bonzo_addons.js"></script>
 </body>
 </html>
