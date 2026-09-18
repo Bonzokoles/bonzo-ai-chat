@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="bugatti">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EastWood Ops</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: "CascadiaMonoLocal"; src: url("themes/CascadiaMono.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "VerdanaLocal"; src: url("themes/verdana.ttf") format("truetype"); font-display: swap; }
+:root {
+  --bg:#0a0d14; --bg2:#0f1420; --bg3:#131a29; --bg4:#182235;
+  --border:#21314f; --border2:#2a3f66; --accent:#79c0ff; --accent2:#3f91d9;
+  --text:#dce9ff; --text2:#8ea3c4; --text3:#5a6e8d; --user-bg:#0f1e35;
+  --danger:#d55a6f; --ok:#4cb685;
+}
+html[data-theme="bugatti"] { --bg:#030409; --bg2:#090b11; --bg3:#0e121a; --bg4:#151a24; --border:#39445b; --border2:#5d6b8c; --accent:#8f9cff; --accent2:#7787f0; --text:#f5f7ff; --text2:#c2cbe0; --text3:#8b97b3; --user-bg:#0b1326; }
+html[data-theme="hashicorp"] { --bg:#0a0602; --bg2:#14100b; --bg3:#1d150e; --bg4:#271c12; --border:#4d3320; --border2:#8d5a2f; --accent:#ff9d2f; --accent2:#ffd08f; --text:#fff1dd; --text2:#e4bc8d; --text3:#b98958; --user-bg:#1b120a; }
+html[data-theme="midnight"] { --bg:#02060c; --bg2:#050b14; --bg3:#08111d; --bg4:#0c1627; --border:#1f3b63; --border2:#2f5f99; --accent:#2ee6ff; --accent2:#89f2ff; --text:#ddf8ff; --text2:#95d9e6; --text3:#5aa0b0; --user-bg:#07101b; }
+html[data-theme="blackout"] { --bg:#000000; --bg2:#050505; --bg3:#0a0a0a; --bg4:#101010; --border:#2f2f2f; --border2:#555555; --accent:#ffffff; --accent2:#cccccc; --text:#ffffff; --text2:#d5d5d5; --text3:#a8a8a8; --user-bg:#090909; }
+
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0!important}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:"JetBrains Mono","CascadiaMonoLocal",Consolas,monospace;
+  color:var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+html[data-theme="blackout"] body{
+  background: var(--bg);
+}
+html[data-theme="bugatti"] #topbar{background:linear-gradient(90deg,#090b11,#121726)}
+html[data-theme="hashicorp"] #topbar{background:linear-gradient(90deg,#14100b,#261908)}
+html[data-theme="midnight"] #topbar{background:linear-gradient(90deg,#050b14,#0b1b30)}
+html[data-theme="blackout"] #topbar{background:linear-gradient(90deg,#050505,#0b0b0b)}
+
+html[data-theme="bugatti"] #chat-main{background:linear-gradient(180deg,rgba(12,16,28,.9),rgba(6,8,14,.96))}
+html[data-theme="hashicorp"] #chat-main{background:linear-gradient(180deg,rgba(30,20,10,.92),rgba(16,10,6,.96))}
+html[data-theme="midnight"] #chat-main{background:linear-gradient(180deg,rgba(6,16,28,.92),rgba(3,9,16,.97))}
+html[data-theme="blackout"] #chat-main{background:linear-gradient(180deg,rgba(6,6,6,.95),rgba(1,1,1,.98))}
+
+html[data-theme="bugatti"] #input-area, html[data-theme="bugatti"] #sidebar, html[data-theme="bugatti"] #rightbar, html[data-theme="bugatti"] #term-panel{background:var(--bg2)}
+html[data-theme="hashicorp"] #input-area, html[data-theme="hashicorp"] #sidebar, html[data-theme="hashicorp"] #rightbar, html[data-theme="hashicorp"] #term-panel{background:#120e09}
+html[data-theme="midnight"] #input-area, html[data-theme="midnight"] #sidebar, html[data-theme="midnight"] #rightbar, html[data-theme="midnight"] #term-panel{background:#07101b}
+html[data-theme="blackout"] #input-area, html[data-theme="blackout"] #sidebar, html[data-theme="blackout"] #rightbar, html[data-theme="blackout"] #term-panel{background:#050505}
+button,input,select,textarea{font-family:inherit;color:var(--text)}
+button{background:none;border:1px solid var(--border2);padding:5px 10px;cursor:pointer}
+button:hover{border-color:var(--accent);color:var(--accent)}
+input,select,textarea{background:var(--bg3);border:1px solid var(--border2);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+
+#app{height:100%;display:flex;flex-direction:column}
+#topbar{height:52px;display:flex;align-items:center;gap:8px;padding:0 12px;background:linear-gradient(90deg,var(--bg2),#0a0f1a);border-bottom:1px solid var(--border)}
+.tb-logo{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;letter-spacing:.12em;color:var(--accent)}
+.tb-logo img{width:18px;height:18px}
+.tb-status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.dot{width:7px;height:7px;display:inline-block}
+.dot-green{background:var(--ok)} .dot-yellow{background:#c8a950} .dot-red{background:var(--danger)}
+.work-sensor{width:8px;height:8px;display:inline-block;background:var(--text3);border:1px solid var(--border2);opacity:.35;transition:opacity .2s ease,background .2s ease,box-shadow .2s ease}
+#app.model-busy .work-sensor{background:var(--accent);border-color:var(--accent2);animation:sensorPulse 2.8s ease-in-out infinite;box-shadow:0 0 4px rgba(143,156,255,.25)}
+@keyframes sensorPulse{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:.78;transform:scale(1.05)}}
+.tb-sep{width:1px;height:24px;background:var(--border)}
+.tb-model-wrap{flex:1;max-width:380px}
+#model-select{width:100%;padding:6px 8px}
+.tb-task-wrap{width:180px}
+#task-profile-select{width:100%;padding:6px 8px}
+.tb-actions{display:flex;align-items:center;gap:6px}
+#api-url-input{width:190px;padding:6px 8px}
+
+#main{flex:1;display:grid;grid-template-columns:260px minmax(0,1fr) 340px;min-height:0;transition:grid-template-columns .2s ease}
+#app.left-collapsed #main{grid-template-columns:0 minmax(0,1fr) 340px}
+#app.right-collapsed #main{grid-template-columns:260px minmax(0,1fr) 0}
+#app.left-collapsed.right-collapsed #main{grid-template-columns:minmax(0,1fr)}
+
+#sidebar{min-height:0;overflow:auto;background:var(--bg2);border-right:1px solid var(--border)}
+#app.left-collapsed #sidebar{display:none}
+.sb-section{padding:10px;border-bottom:1px solid var(--border)}
+.sb-title{font-size:10px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sb-body.collapsed{display:none}
+.toggle-icon{cursor:pointer}
+#btn-new-chat-sb{width:100%;margin-bottom:8px}
+#history-list{display:flex;flex-direction:column;gap:6px}
+.hist-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.hist-tool-btn{border:1px solid var(--border2);padding:3px 8px;font-size:10px;color:var(--text2);cursor:pointer}
+.hist-tool-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+#chat-main{display:flex;flex-direction:column;min-height:0;background:linear-gradient(180deg,rgba(12,16,28,.9),rgba(6,8,14,.96));position:relative}
+#chat-main::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent 0%,rgba(123,136,240,.05) 45%,transparent 100%);transform:skewX(-10deg) translateX(18%)}
+#messages-wrap{flex:1;min-height:0;overflow:auto;padding:14px}
+#messages{display:flex;flex-direction:column;gap:8px}
+.msg{display:flex;gap:8px;max-width:94%;border:1px solid var(--border2);background:color-mix(in srgb, var(--bg3) 64%, transparent);padding:8px;transform:translateZ(0);backdrop-filter:blur(2px)}
+.msg-user{margin-left:auto;background:color-mix(in srgb, var(--user-bg) 58%, transparent);border-color:var(--border2)}
+.msg-avatar{width:20px;height:20px;border:1px solid var(--border2);display:grid;place-items:center;flex-shrink:0}
+.msg-avatar svg{width:12px;height:12px;fill:var(--accent)}
+.msg-body{flex:1;min-width:0}
+.msg-meta{display:flex;gap:8px;color:var(--text3);font-size:10px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.msg-action{color:var(--text2);border:none;padding:0;background:none}
+.msg-badge{display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border:1px solid var(--border2);background:var(--bg4);color:var(--text2);max-width:100%}
+.msg-badge-label{color:var(--text3);text-transform:uppercase}
+.msg-badge-value{color:var(--accent);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#typing{display:none;padding:0 14px 10px;color:var(--text3);align-items:center;gap:6px}
+#typing.visible{display:flex}
+.pulse-dot{width:6px;height:6px;background:var(--accent);opacity:.35;animation:pulse 2.2s infinite}
+.pulse-dot:nth-child(2){animation-delay:.2s}.pulse-dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{50%{opacity:.75;transform:scale(1.04)}}
+
+#input-area{padding:10px;border-top:1px solid var(--border);background:var(--bg2)}
+#attached-files{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.attached-file{display:flex;gap:6px;align-items:center;border:1px solid var(--border2);padding:2px 8px;background:var(--bg3);font-size:11px}
+#input-bar{display:flex;align-items:flex-end;gap:6px;border:1px solid var(--border2);background:var(--bg3);padding:6px}
+#msg-input{flex:1;min-height:24px;max-height:160px;resize:none;background:none;border:none}
+#msg-input:focus{border:none}
+#btn-send{background:var(--accent);color:#06101b;font-weight:700}
+#btn-vox-toggle{font-size:10px;padding:4px 6px;min-width:36px;border-width:2px}
+#btn-vox-toggle.vox-on{border-color:var(--ok);color:var(--ok)}
+#btn-vox-toggle.vox-off{border-color:var(--text3);color:var(--text3);opacity:.45}
+#quick-cmds{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.qcmd{border:1px solid var(--border2);padding:2px 8px;font-size:10px;color:var(--text2)}
+.qcmd:hover{border-color:var(--accent);color:var(--accent)}
+#sb-settings-body{display:none!important}
+
+#rightbar,#term-panel{min-height:0;overflow:hidden;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;position:relative}
+#app.right-collapsed #rightbar,#app.right-collapsed #term-panel{display:none}
+#rightbar.hidden,#term-panel.hidden{display:none}
+#rightbar-header,#term-header{height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border);color:var(--text2);font-size:11px}
+#term-resize-handle{position:absolute;left:0;top:0;bottom:0;width:4px;cursor:col-resize;z-index:10;background:transparent;transition:background .15s}
+#term-resize-handle:hover,#term-resize-handle.dragging{background:var(--accent)}
+#rightbar-content{overflow:auto;padding:10px}
+.rb-section{padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--border)}
+.sb-label{display:flex;justify-content:space-between;color:var(--text2);font-size:11px;margin:8px 0 4px}
+.sb-val{color:var(--accent)}
+#system-prompt{width:100%;min-height:100px;padding:8px;margin-top:6px}
+#kb-list{max-height:120px;overflow:auto}
+
+#term-title{flex:1}
+#term-container{flex:1;min-height:0;padding:5px}
+#term-quick-bar{display:flex;gap:4px;flex-wrap:wrap;padding:6px;border-top:1px solid var(--border)}
+.tqcmd{padding:2px 8px;font-size:10px;border:1px solid var(--border2);color:var(--text2);cursor:pointer}
+.tqcmd:hover{border-color:var(--accent);color:var(--accent)}
+.tqcmd-featured{border-color:var(--accent);color:var(--accent);font-weight:bold}
+.tqcmd-featured:hover{background:var(--accent);color:var(--bg)}
+
+.code-block-wrap{position:relative;margin:8px 0;border:1px solid var(--border2);background:#0a1020}
+.code-actions{position:absolute;top:6px;right:8px;display:flex;gap:6px}
+.code-act-btn{font-size:10px;border:1px solid var(--border2);padding:1px 6px}
+pre{padding:26px 10px 10px;overflow:auto}
+
+@media (max-width:1200px){#main{grid-template-columns:220px minmax(0,1fr) 300px}}
+@media (max-width:900px){#main{grid-template-columns:minmax(0,1fr)} #sidebar,#rightbar,#term-panel{display:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="tb-logo"><img src="/ui-icon.png" alt="EastWood icon"><span id="app-title">EASTWOOD</span></div>
+    <div class="tb-status" id="conn-badge" style="display:flex; align-items:center; gap:6px; background:#07120e; border:1px solid #00e6a8; padding:3px 8px; font-family:'JetBrains Mono',monospace; font-size:11px;">
+      <span class="dot dot-green" id="status-dot" style="width:7px; height:7px; background:#00e6a8; box-shadow:0 0 6px #00e6a8;"></span>
+      <span id="status-text" style="color:#00e6a8; font-weight:600; letter-spacing:0.04em;">CONNECTING...</span>
+      <span id="ping-badge" style="color:#79c0ff; font-size:10px; border-left:1px solid #1a332a; padding-left:5px;">-ms</span>
+      <span class="work-sensor" id="work-sensor" title="Model activity"></span>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="btn-left-toggle">LEFT</button>
+    <button class="tb-btn" id="btn-right-toggle">RIGHT</button>
+    <button class="tb-btn" id="btn-right-mode">PANEL</button>
+    <button class="tb-btn" id="btn-diag-toggle" style="border-color:#ff0055; color:#ff0055;" title="Toggle Agent Diagnostics Dashboard">DIAGNOSTICS</button>
+    <div class="tb-model-wrap"><select id="model-select"><option value="">Loading models...</option></select></div>
+    <div class="tb-task-wrap"><select id="task-profile-select"><option value="shop_help">shop help</option></select></div>
+    <div class="tb-actions">
+      <input id="api-url-input" type="text" value="http://localhost:4149" title="Backend URL">
+      <button class="tb-btn" id="btn-theme">THEME</button>
+      <button class="tb-btn" id="btn-term-toggle">TERM</button>
+      <button class="tb-btn" id="btn-launch-pi" style="border-color:var(--accent); color:var(--accent); display:inline-flex; align-items:center; gap:4px;" title="Otworz terminal i uruchom agenta Pi obok czatu"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2zm6-4v2m-3 8v9m6-9v9M5 16l4-2m6 0l4 2M9 18h6M10 8v.01M14 8v.01"/></svg> PI</button>
+    </div>
+  </header>
+
+  <div id="main">
+    <aside id="sidebar">
+      <div class="sb-section">
+        <button id="btn-new-chat-sb">NEW CHAT</button>
+        <div class="sb-title">HISTORY</div>
+        <div id="history-list"></div>
+        <div class="hist-tools">
+          <button class="hist-tool-btn" id="btn-history-prune">PRUNE</button>
+          <button class="hist-tool-btn" id="btn-export-json-sb">EXPORT</button>
+          <button class="hist-tool-btn" id="btn-clear-chat-sb">CLEAR</button>
+        </div>
+      </div>
+    </aside>
+
+    <main id="chat-main">
+      <div id="messages-wrap"><div id="messages"></div><div id="typing"><span class="pulse-dot"></span><span class="pulse-dot"></span><span class="pulse-dot"></span></div></div>
+      <div id="input-area">
+        <div id="attached-files"></div>
+        <div id="input-bar">
+          <button id="btn-attach" title="Attach file">ATT</button>
+          <input type="file" id="file-input" multiple style="display:none">
+          <textarea id="msg-input" placeholder="Napisz wiadomość... (Enter = wyślij, Shift+Enter = nowa linia)" rows="1"></textarea>
+          <button id="btn-voice" title="Voice input">MIC</button>
+          <button id="btn-vox-toggle" class="vox-on" title="Toggle voice readout">VOX</button>
+          <button id="btn-send">SEND</button>
+        </div>
+        <div id="quick-cmds">
+          <span class="qcmd" data-cmd="Napisz krótkie podsumowanie tej rozmowy.">summary</span>
+          <span class="qcmd" data-cmd="Zaproponuj następny krok.">next step</span>
+          <span class="qcmd" data-cmd="Napisz przykładowy kod dla omawianego tematu.">code</span>
+          <span class="qcmd" data-cmd="Wyjaśnij to dokładniej.">detail</span>
+          <span class="qcmd" data-cmd="Sprawdź błędy i zaproponuj fix.">debug</span>
+          <span class="qcmd" data-cmd="/clear">clear</span>
+        </div>
+      </div>
+    </main>
+
+    <main id="diag-main" style="display:none; flex-direction:column; min-height:0; background:linear-gradient(180deg,#04060b,#0b0e17); position:relative; overflow:auto; padding:15px; gap:14px; font-family:'JetBrains Mono',Consolas,monospace;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; border-bottom:1px solid #ff0055; padding-bottom:10px;">
+        <div>
+          <div style="font-size:16px; font-weight:700; color:#ff0055; text-shadow:0 0 8px rgba(255,0,85,0.35);">REAL DIAGNOSTICS DASHBOARD</div>
+          <div style="font-size:11px; color:#8ea3c4; margin-top:4px;">Bez fikcyjnych liczników. Pokazuje tylko dane z backendu, DB i dziennika.</div>
+        </div>
+        <div style="text-align:right; font-size:11px; color:#8ea3c4;">
+          <div>SYSTEM STATUS: <span id="diag-sys-status" style="color:#00ff88; font-weight:700;">LOADING</span></div>
+          <div style="margin-top:4px;">Last refresh: <span id="diag-generated-at" style="color:#79c0ff;">-</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <button id="btn-diag-test" class="sb-btn" style="font-size:10px; padding:4px 10px; border-color:#00ff88; color:#00ff88;">REFRESH LIVE</button>
+        <div style="font-size:11px; color:#8ea3c4;">Green = live. Yellow = partial. Red = backend problem.</div>
+      </div>
+
+      <div style="border:1px solid #21314f; background:#070a12; padding:12px;">
+        <div style="font-size:11px; text-transform:uppercase; color:#5a6e8d; margin-bottom:8px; letter-spacing:0.08em;">HOW TO READ THIS PANEL</div>
+        <ol style="margin-left:18px; color:#dce9ff; line-height:1.55; font-size:12px;">
+          <li>Najpierw patrz na `backend`, `terminal` i `active requests`.</li>
+          <li>Jeśli `active requests` jest > 0, coś realnie liczy albo odpowiada.</li>
+          <li>`recent activity` pokazuje ostatnie wiadomości z bazy, bez zmyślania.</li>
+          <li>Profil zadania wybierasz przed chatem, a nie po fakcie.</li>
+        </ol>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+        <div style="border:1px solid #21314f; background:#070a12; padding:10px;">
+          <div style="color:#5a6e8d; font-size:10px; text-transform:uppercase;">Backend</div>
+          <div id="diag-backend-status" style="font-size:18px; color:#00ff88; font-weight:700; margin-top:4px;">-</div>
+          <div id="diag-provider" style="font-size:10px; color:#8ea3c4; margin-top:2px;">-</div>
+        </div>
+        <div style="border:1px solid #21314f; background:#070a12; padding:10px;">
+          <div style="color:#5a6e8d; font-size:10px; text-transform:uppercase;">Live Activity</div>
+          <div style="font-size:18px; color:#79c0ff; font-weight:700; margin-top:4px;"><span id="diag-active-chat">0</span> chat / <span id="diag-active-terminal">0</span> term</div>
+          <div id="diag-embeddings" style="font-size:10px; color:#8ea3c4; margin-top:2px;">-</div>
+        </div>
+        <div style="border:1px solid #21314f; background:#070a12; padding:10px;">
+          <div style="color:#5a6e8d; font-size:10px; text-transform:uppercase;">Database</div>
+          <div style="font-size:18px; color:#ff9d2f; font-weight:700; margin-top:4px;"><span id="diag-conversations">0</span> conv / <span id="diag-messages">0</span> msg</div>
+          <div id="diag-message-breakdown" style="font-size:10px; color:#8ea3c4; margin-top:2px;">-</div>
+        </div>
+        <div style="border:1px solid #21314f; background:#070a12; padding:10px;">
+          <div style="color:#5a6e8d; font-size:10px; text-transform:uppercase;">Diary</div>
+          <div style="font-size:18px; color:#ff0055; font-weight:700; margin-top:4px;"><span id="diag-diary-count">0</span> entries</div>
+          <div id="diag-default-model" style="font-size:10px; color:#8ea3c4; margin-top:2px;">-</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px;">
+        <section style="border:1px solid #21314f; background:#070a12; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-size:11px; text-transform:uppercase; color:#5a6e8d; letter-spacing:0.08em;">Task Profiles</div>
+            <div style="font-size:10px; color:#8ea3c4;">real backend config</div>
+          </div>
+          <div id="diag-profiles" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </section>
+
+        <section style="border:1px solid #21314f; background:#070a12; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-size:11px; text-transform:uppercase; color:#5a6e8d; letter-spacing:0.08em;">Recent Conversations</div>
+            <div style="font-size:10px; color:#8ea3c4;">from SQLite</div>
+          </div>
+          <div id="diag-recent-conversations" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </section>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px;">
+        <section style="border:1px solid #21314f; background:#070a12; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-size:11px; text-transform:uppercase; color:#5a6e8d; letter-spacing:0.08em;">Recent Activity</div>
+            <div style="font-size:10px; color:#8ea3c4;">latest message rows</div>
+          </div>
+          <div id="diag-recent-activity" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </section>
+
+        <section style="border:1px solid #21314f; background:#070a12; padding:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-size:11px; text-transform:uppercase; color:#5a6e8d; letter-spacing:0.08em;">Knowledge Mood</div>
+            <div style="font-size:10px; color:#8ea3c4;">no synthetic chunks</div>
+          </div>
+          <div id="diag-knowledge-dir" style="font-size:11px; color:#8ea3c4; line-height:1.5; margin-bottom:8px;"></div>
+          <div id="diag-kb-count" style="font-size:18px; color:#00ff88; font-weight:700; margin-bottom:8px;">0 files</div>
+          <div id="diag-kb-sample" style="font-size:11px; color:#dce9ff; line-height:1.5;"></div>
+        </section>
+      </div>
+
+      <section style="border:1px solid #21314f; background:#070a12; padding:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-size:11px; text-transform:uppercase; color:#5a6e8d; letter-spacing:0.08em;">Diary Snapshot</div>
+          <div style="font-size:10px; color:#8ea3c4;">facts, goals, moments, decisions</div>
+        </div>
+        <div id="diag-diary-summary" style="font-size:12px; color:#dce9ff; line-height:1.55; white-space:pre-wrap;"></div>
+      </section>
+    </main>
+
+    <aside id="rightbar">
+      <div id="rightbar-header"><span id="panel-title">EASTWOOD OPS PANEL</span></div>
+      <div id="rightbar-content">
+        <div class="rb-section">
+          <div class="sb-title">SETTINGS <span class="toggle-icon" data-target="sb-settings-body">▾</span></div>
+          <div class="sb-body" id="sb-settings-body">
+            <div class="sb-label">Temperature <span class="sb-val" id="temp-val">0.6</span></div>
+            <input type="range" id="sl-temperature" min="0" max="2" step="0.1" value="0.6">
+            <div class="sb-label">Top P <span class="sb-val" id="topp-val">0.9</span></div>
+            <input type="range" id="sl-topp" min="0" max="1" step="0.05" value="0.9">
+            <div class="sb-label">Max Tokens <span class="sb-val" id="maxtok-val">1024</span></div>
+            <input type="range" id="sl-maxtok" min="256" max="4096" step="256" value="1024">
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="cb-tools" checked><label for="cb-tools">MCP Tools</label></div>
+          </div>
+        </div>
+
+        <div class="rb-section">
+          <div class="sb-title"><span id="prompt-title">EASTWOOD PROMPT</span> <span class="toggle-icon" data-target="sb-prompt-body">▾</span></div>
+          <div class="sb-body" id="sb-prompt-body">
+            <textarea id="system-prompt" rows="6" placeholder="Custom system prompt... (puste = domyślny prompt EASTWOOD)"></textarea>
+            <button class="sb-btn" id="btn-reset-prompt" style="margin-top:6px">RESET PROMPT</button>
+          </div>
+        </div>
+
+        <div class="rb-section">
+          <div class="sb-title"><span id="kb-title">KNOWLEDGE MOOD</span> <span class="toggle-icon" data-target="sb-kb-body">▾</span></div>
+          <div class="sb-body" id="sb-kb-body">
+            <div id="kb-list"><span style="color:var(--text3);font-size:11px">-</span></div>
+            <div style="margin-top:6px;display:flex;gap:5px">
+              <button class="sb-btn" id="btn-kb-upload">UPLOAD</button>
+              <button class="sb-btn" id="btn-kb-refresh">REFRESH</button>
+              <input type="file" id="kb-file-input" style="display:none" multiple>
+            </div>
+          </div>
+        </div>
+
+        <div class="rb-section">
+          <div class="sb-title">VOICE AND RESEARCH <span class="toggle-icon" data-target="sb-voice-body">▾</span></div>
+          <div class="sb-body" id="sb-voice-body">
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="sb-btn" id="btn-stt-upload">TRANSCRIBE</button>
+              <button class="sb-btn" id="btn-tts-play">READ ALOUD</button>
+              <input type="file" id="stt-file-input" accept="audio/*" style="display:none">
+            </div>
+            <div style="margin-top:6px;display:flex;gap:5px;align-items:center">
+              <label for="tts-style-select" style="font-size:11px;color:var(--text2)">TTS style</label>
+              <select id="tts-style-select" style="flex:1;min-width:140px">
+                <option value="neo-noir">neo-noir</option>
+                <option value="dry-sarcasm">dry-sarcasm</option>
+                <option value="philosophy-dark">philosophy-dark</option>
+                <option value="code-mentor">code-mentor</option>
+              </select>
+            </div>
+            <div style="margin-top:6px;display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="cb-auto-tts" checked>
+              <label for="cb-auto-tts" style="font-size:11px;color:var(--text2)">AUTO VOICE</label>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:5px;flex-wrap:wrap">
+              <button class="sb-btn" id="btn-research-kb">RESEARCH TO KB</button>
+              <button class="sb-btn" id="btn-tmdb-kb">TMDB TO KB</button>
+              <button class="sb-btn" id="btn-decision-coach">DECISION COACH</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rb-section">
+          <div class="sb-title">PERSONAL MEMORY <span class="toggle-icon" data-target="sb-memory-body">▾</span></div>
+          <div class="sb-body collapsed" id="sb-memory-body">
+            <div id="memory-summary" style="font-size:11px;color:var(--text2);line-height:1.45">No memory loaded.</div>
+            <div style="margin-top:6px;display:flex;gap:5px;flex-wrap:wrap">
+              <button class="sb-btn" id="btn-memory-refresh">REFRESH MEMORY</button>
+              <button class="sb-btn" id="btn-memory-clear">CLEAR MEMORY</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="rb-section" style="border-bottom:none;margin-bottom:0;padding-bottom:0">
+          <div class="sb-title">EXPORT</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button class="sb-btn" id="btn-export-json">JSON</button>
+            <button class="sb-btn" id="btn-export-md">MARKDOWN</button>
+            <button class="sb-btn" id="btn-clear-chat">CLEAR</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <aside id="term-panel" class="hidden">
+      <div id="term-resize-handle"></div>
+      <div id="term-header"><span id="term-title">POWERSHELL</span><span class="dot dot-yellow" id="term-dot"></span><span id="term-status-text">disconnected</span><button class="term-hbtn" id="btn-term-reconnect">RECONNECT</button><button class="term-hbtn" id="btn-term-clear-screen">CLEAR</button><button class="term-hbtn" id="btn-term-send-to-chat">TO CHAT</button></div>
+      <div id="term-container"></div>
+      <div id="term-quick-bar">
+        <span class="tqcmd tqcmd-featured" data-cmd="pi\r" title="Uruchom agenta kodujacego Pi" style="display:inline-flex; align-items:center; gap:3px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2zm6-4v2m-3 8v9m6-9v9M5 16l4-2m6 0l4 2M9 18h6M10 8v.01M14 8v.01"/></svg> pi agent</span>
+        <span class="tqcmd" data-cmd="&quot;Z:\.Goose_agent\check_env.ps1&quot;\r" title="Diagnostyka srodowiska systemowego">check env</span>
+        <span class="tqcmd" data-cmd="&quot;Z:\.Goose_agent\test_gateway.ps1&quot;\r" title="Test bramy Cloudflare Workers AI">gw test</span>
+        <span class="tqcmd" data-cmd="Get-Location\r">pwd</span>
+        <span class="tqcmd" data-cmd="Get-ChildItem\r">ls</span>
+        <span class="tqcmd" data-cmd="git status\r">git st</span>
+        <span class="tqcmd" data-cmd="git log --oneline -10\r">git log</span>
+        <span class="tqcmd" data-cmd="python --version; node --version\r">env ver</span>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

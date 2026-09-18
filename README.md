@@ -1,352 +1,114 @@
-# 🤖 01-ai-blog - MyBonzo AI Chat Component
+# The_Buch
 
-**Status**: ✅ Production Ready  
-**Framework**: Astro + React  
-**Priority**: ⭐⭐⭐⭐⭐ (Highest)  
-**Estimated Time**: 20-30 minutes
+Lokalna aplikacja `EastWood Ops` do pracy prywatnej i operacyjnej. To nie jest już projekt Astro, Electron ani Cloudflare Pages. Aktualny runtime to statyczny frontend plus backend FastAPI uruchamiany lokalnie.
 
----
+## Aktualny model działania
 
-## 📋 Overview
+- frontend: [index.html](S:/BONZO_I_DO_SHELL_SHOP/the_CLEAN_east_WOOD/36_chambers/The_Buch/index.html) + [app.js](S:/BONZO_I_DO_SHELL_SHOP/the_CLEAN_east_WOOD/36_chambers/The_Buch/app.js)
+- backend: [backend/app/main.py](S:/BONZO_I_DO_SHELL_SHOP/the_CLEAN_east_WOOD/36_chambers/The_Buch/backend/app/main.py)
+- port lokalny: `4149`
+- terminal w UI: `xterm.js` + websocket `/ws/terminal`
+- Python runtime: `backend/venv/Scripts/python.exe`
 
-Modern AI chat component with multiple AI providers, streaming responses, file uploads, and session management. Designed to integrate seamlessly with MyBonzo blog.
+## Co jest krytyczne
 
-### ✨ Features
+- `start.bat` uruchamia backend na `4149` i otwiera frontend
+- `backend/venv` musi istnieć, bo launcher korzysta z lokalnego Pythona
+- `themes/` musi zostać, bo frontend ładuje motywy dynamicznie
+- `Icons33eeewwee/` musi zostać, bo backend serwuje faviconę i ikonę aplikacji
+- `knowledge_mood/` to aktywna baza wiedzy dla aplikacji
+- `knowledge_base/` jest wyłączone z tych prac i zostaje dla osobnego procesu
+- `The_brain/` zostaje jako zasób wiedzy i danych historycznych, dopóki nie potwierdzimy pełnego zakresu użycia
 
-- 🎯 Multiple AI Providers (OpenAI, Anthropic, Google, Local)
-- 📝 Streaming & Non-streaming responses
-- 📎 File upload support (text files & embeddings)
-- 💾 Session persistence (localStorage)
-- 🎨 Role presets (Assistant, Developer, Translator, etc.)
-- 🌓 Dark mode support
-- 📱 Responsive design
-- 🔒 Secure API key handling
-- ⚡ Optimized for Cloudflare Pages
+## Bieżąca struktura
 
----
-
-## 🚀 Quick Start
-
-### 1. Installation
-
-```powershell
-cd Q:\mybonzo\mybonzoAIBLOG_COMONENTS\01-ai-blog
-npm install
+```text
+The_Buch/
+|- backend/
+|  |- app/
+|  |- venv/
+|- knowledge_mood/
+|  |- PINKY_one/
+|  |- the_deal_BOYS/
+|- The_brain/
+|- themes/
+|- Icons33eeewwee/
+|- index.html
+|- app.js
+|- start.bat
+|- launch-jimbo.cmd
+|- run-jimbo-always.cmd
+|- jimbo-cli.py
+|- jimbo-cli.cmd
+|- .env
 ```
 
-### 2. Configuration
-
-Create `.dev.vars` file:
-
-```env
-OPENAI_API_KEY=sk-proj-your-key-here
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-GOOGLE_API_KEY=your-google-key-here
-```
-
-### 3. Development
-
-```powershell
-npm run dev
-```
-
-Visit: http://localhost:4321
-
-### 4. Build & Test
-
-```powershell
-npm run build
-npm run preview
-```
-
----
-
-## 📦 Project Structure
-
-```
-01-ai-blog/
-├── src/
-│   ├── components/
-│   │   └── ChatWidget.jsx       # Main chat component
-│   ├── pages/
-│   │   ├── index.astro          # Demo page
-│   │   └── api/
-│   │       ├── chat.js          # Non-streaming endpoint
-│   │       └── stream.js        # Streaming endpoint
-│   ├── styles/
-│   │   └── blog-theme.css       # Shared blog styles
-│   └── utils/
-│       └── ai-providers.js      # AI provider integrations
-├── functions/
-│   └── api/                     # Cloudflare Pages Functions
-├── package.json
-├── astro.config.mjs
-├── .dev.vars.example
-└── README.md
-```
-
----
-
-## 🎯 Deployment Workflow
-
-### ETAP 1: Local Development ✅
-Already completed! Follow Quick Start above.
-
-### ETAP 2: GitHub Repository
-
-```powershell
-cd Q:\mybonzo\mybonzoAIBLOG_COMONENTS\01-ai-blog
-git init
-git add .
-git commit -m "feat: MyBonzo AI Chat - production ready
-
-Features:
-- Multi-provider support (OpenAI, Anthropic, Google)
-- Streaming responses
-- File upload & processing
-- Session management
-- Role presets
-- Blog theme integration
-- Cloudflare Pages optimized"
-
-gh repo create mybonzo-ai-chat --public --source=. --remote=origin
-git push -u origin main
-```
-
-### ETAP 3: Cloudflare Pages Deployment
-
-**Option A: CLI Deployment**
-
-```powershell
-npm run build
-wrangler pages deploy ./dist --project-name=mybonzo-ai-chat
-```
-
-**Option B: Dashboard Deployment**
-
-1. Go to: https://dash.cloudflare.com/
-2. Workers & Pages → Create → Connect to Git
-3. Select: `mybonzo-ai-chat` repository
-4. Settings:
-   - Framework: **Astro**
-   - Build command: `npm run build`
-   - Build output: `dist`
-   - Root directory: `/`
-5. Environment Variables:
-   ```
-   OPENAI_API_KEY=sk-proj-...
-   ANTHROPIC_API_KEY=sk-ant-...
-   GOOGLE_API_KEY=...
-   ```
-6. Deploy!
-
-**Result**: https://mybonzo-ai-chat.pages.dev
-
-### ETAP 4: Blog Integration
-
-```powershell
-cd Q:\mybonzo\mybonzoAIblog\src\pages\eksperymenty\projekt-1
-# Edit index.astro
-```
-
-Add iframe integration:
-
-```astro
----
-import Layout from '../../../layouts/Layout.astro';
----
-
-<Layout 
-    title="MyBonzo AI Chat" 
-    description="Inteligentny asystent AI z wieloma modelami"
->
-    <div class="container mx-auto px-4 py-8">
-        <a href="/eksperymenty" class="text-blue-600 hover:underline mb-4 inline-block">
-            ← Powrót do Laboratorium
-        </a>
-
-        <h1 class="text-4xl font-bold mb-6">🤖 MyBonzo AI Chat</h1>
-
-        <div class="w-full h-[800px] border-2 rounded-lg shadow-lg overflow-hidden">
-            <iframe 
-                src="https://mybonzo-ai-chat.pages.dev"
-                class="w-full h-full"
-                title="MyBonzo AI Chat"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-                loading="lazy"
-            />
-        </div>
-    </div>
-</Layout>
-```
-
-Commit & push:
-
-```powershell
-git add src/pages/eksperymenty/projekt-1/index.astro
-git commit -m "Add mybonzo-ai-chat integration"
-git push origin main
-```
-
----
-
-## 🔧 Configuration
-
-### API Providers
-
-Edit `src/utils/ai-providers.js` to add/remove providers:
-
-```javascript
-export const PROVIDERS = {
-  openai: {
-    name: 'OpenAI',
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'],
-    default: 'gpt-4o-mini'
-  },
-  anthropic: {
-    name: 'Anthropic Claude',
-    models: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
-    default: 'claude-3-5-sonnet-20241022'
-  }
-};
-```
-
-### Role Presets
-
-Customize in `src/components/ChatWidget.jsx`:
-
-```javascript
-const ROLE_PRESETS = [
-  { id: "helpful", label: "Pomocny asystent", prompt: "..." },
-  { id: "code", label: "Asystent programisty", prompt: "..." },
-  // Add your own...
-];
-```
-
----
-
-## 🎨 Styling
-
-The component uses `blog-theme.css` for consistent styling with the main blog.
-
-**Copy shared styles**:
-
-```powershell
-Copy-Item "Q:\mybonzo\mybonzoAIblog\src\pages\eksperymenty\_SHARED_ASSETS\styles\blog-theme.css" "src\styles\"
-```
-
-**Available CSS Classes**:
-- `.blog-container` - Main container
-- `.blog-heading` - Headings
-- `.blog-card` - Cards
-- `.blog-button` - Buttons
-- `.blog-input` - Input fields
-- Dark mode automatic
-
----
-
-## 🔒 Security
-
-### API Keys
-- ✅ Never commit API keys to repository
-- ✅ Use environment variables
-- ✅ `.dev.vars` for local, Cloudflare ENV for production
-
-### CORS
-- ✅ Configured in Pages Functions
-- ✅ Only allow your domains
-
-### Rate Limiting
-- ⚠️ Implement in Cloudflare Workers if needed
-- ⚠️ Monitor API usage
-
----
-
-## 📊 Cost Estimation
-
-| Service | Monthly Cost |
-|---------|--------------|
-| Cloudflare Pages | $0 (Free tier) |
-| OpenAI API | $5-15 (depends on usage) |
-| Anthropic API | $0-10 (optional) |
-| Google AI | $0 (free tier) |
-| **TOTAL** | **~$5-25/month** |
-
----
-
-## 🐛 Troubleshooting
-
-### Build Fails
-```powershell
-# Clear cache and rebuild
-rm -Recurse -Force node_modules, dist
-npm install
-npm run build
-```
-
-### API Errors
-- Check environment variables in Cloudflare dashboard
-- Verify API keys are valid
-- Check browser console for errors
-
-### Streaming Not Working
-- Ensure fetch supports streaming
-- Check Cloudflare Workers compatibility
-- Try non-streaming mode
-
----
-
-## 🔄 Updates & Maintenance
-
-### Update Dependencies
-```powershell
-npm update
-npm audit fix
-```
-
-### Sync Blog Theme
-```powershell
-Copy-Item "Q:\mybonzo\mybonzoAIblog\src\pages\eksperymenty\_SHARED_ASSETS\styles\blog-theme.css" "src\styles\"
-git add src/styles/blog-theme.css
-git commit -m "Update blog theme"
-git push
-```
-
----
-
-## 📚 Documentation
-
-- [Astro Docs](https://docs.astro.build)
-- [Cloudflare Pages](https://developers.cloudflare.com/pages/)
-- [OpenAI API](https://platform.openai.com/docs)
-- [Anthropic API](https://docs.anthropic.com)
-
----
-
-## ✅ Production Checklist
-
-- [ ] Local development works
-- [ ] All features tested
-- [ ] API keys configured
-- [ ] Build successful
-- [ ] GitHub repository created
-- [ ] Cloudflare Pages deployed
-- [ ] Environment variables set
-- [ ] Production URL working
-- [ ] Blog integration added
-- [ ] Documentation updated
-
----
-
-## 🎉 Next Steps
-
-1. ✅ Test locally: `npm run dev`
-2. ✅ Deploy to Cloudflare: See ETAP 3
-3. ✅ Integrate with blog: See ETAP 4
-4. 🚀 Move to next component: `02-image-generator`
-
----
-
-**Created**: November 2025  
-**Version**: 2.0  
-**Status**: Production Ready ✅
+## Launchery
+
+- `start.bat` - glowny start lokalny
+- `launch-jimbo.cmd` - cienki wrapper do `start.bat`
+- `run-jimbo-always.cmd` - wariant autostartu z logowaniem i opoznieniem po starcie systemu
+- `jimbo-cli.cmd` / `jimbo-cli.py` - CLI do health, memory, research i decyzji
+
+## Baza wiedzy
+
+Aktywnie przygotowana wiedza prywatna jest teraz w:
+
+- [knowledge_mood/PINKY_one](S:/BONZO_I_DO_SHELL_SHOP/the_CLEAN_east_WOOD/36_chambers/The_Buch/knowledge_mood/PINKY_one)
+- [knowledge_mood/the_deal_BOYS](S:/BONZO_I_DO_SHELL_SHOP/the_CLEAN_east_WOOD/36_chambers/The_Buch/knowledge_mood/the_deal_BOYS)
+
+`PINKY_one` odpowiada za prywatną wiedzę operacyjną sklepu i platformy.
+`the_deal_BOYS` odpowiada za prywatną wiedzę strategiczną B2B, sourcing i agentów handlowych.
+
+`PINKY_one` ma już własne wejścia backendowe:
+
+- `/api/private-help/info`
+- `/api/private-help/context`
+- `/api/private-help/chat`
+
+To jest mały osobny tor operacyjny. Nie miesza się z torem strategicznym `the_deal_BOYS`.
+
+`the_deal_BOYS` ma już własne wejścia backendowe:
+
+- `/api/deal-ops/info`
+- `/api/deal-ops/context`
+- `/api/deal-ops/chat`
+
+To jest mały osobny tor strategiczny. Nie miesza się z głównym webhookiem `BUCH`.
+
+## Granice systemu
+
+`BUCH` ma zostać prosty i główny:
+
+- `BUCH` = operator lokalny, chat, terminal, pliki, ustawienia, codzienna robota
+- `PINKY_one` = prywatna pomoc operacyjna sklepu i platformy
+- `the_deal_BOYS` = osobny tor strategiczny: sourcing, marże, B2B, Polaczki i orkiestrator
+
+To ma być rozdzielone możliwie mocno:
+
+- bez mieszania promptów w jeden wielki system
+- bez jednego wielkiego runtime dla wszystkiego
+- bez monolitu agentowego w `backend/app/main.py`
+
+Docelowy kierunek jest opisany w:
+
+- [ARCHITECTURE_SPLIT.md](S:/BONZO_I_DO_SHELL_SHOP/the_CLEAN_east_WOOD/36_chambers/The_Buch/ARCHITECTURE_SPLIT.md)
+
+## Co zostało odsunięte
+
+Rzeczy niepotrzebne do obecnego runtime zostały przeniesione do:
+
+- [NOT_in_USE](S:/BONZO_I_DO_SHELL_SHOP/the_CLEAN_east_WOOD/NOT_in_USE)
+
+Są tam między innymi:
+
+- stare szablony workspace
+- stare artefakty `.omx`, `.astro`, `.wrangler`, `.vscode`
+- stare UI i eksperymentalne launchery
+- testowe logi i pliki po starych portach `4433/4444`
+
+## Stan na teraz
+
+- aplikacja jest przygotowana do pierwszego kontrolowanego uruchomienia
+- dokumentacja została wyrównana do aktualnego układu
+- nic nie było uruchamiane w ramach tego etapu porządków

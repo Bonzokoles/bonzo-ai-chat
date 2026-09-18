@@ -1,0 +1,7 @@
+{
+  "tool_name": "CHATboxJIMBO-CLI",
+  "new_status": "deploy",
+  "note": "Dodano lokalny CLI do sterowania research/TMDB/decision/memory; local-first KB retained.",
+  "updated_by": "Jimbo-AI",
+  "updated_at": "2026-05-08T02:57:31Z"
+}

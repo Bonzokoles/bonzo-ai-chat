@@ -1,0 +1,20 @@
+{
+  "adult": false,
+  "backdrop_path": "/puvdyoA50THdlh3AfMkqkeqrOf6.jpg",
+  "genre_ids": [
+    28,
+    18
+  ],
+  "id": 1518391,
+  "title": "Kingpin",
+  "original_language": "ta",
+  "original_title": "Kingpin",
+  "overview": "",
+  "popularity": 0.0071,
+  "poster_path": "/tJ7QPMVfAJKLiBEWAfohzFrY862.jpg",
+  "release_date": "2025-07-04",
+  "softcore": false,
+  "video": false,
+  "vote_average": 0.0,
+  "vote_count": 0
+}

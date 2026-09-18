@@ -1,0 +1,19 @@
+{
+  "adult": false,
+  "backdrop_path": "/t8HtbS9tWWUbqI5J7hIYCspgkGI.jpg",
+  "genre_ids": [
+    35
+  ],
+  "id": 11543,
+  "title": "Kręglogłowi",
+  "original_language": "en",
+  "original_title": "Kingpin",
+  "overview": "",
+  "popularity": 2.5838,
+  "poster_path": "/ojFfLPFI5iiaunQIvRP7GvAtF5A.jpg",
+  "release_date": "1996-07-04",
+  "softcore": false,
+  "video": false,
+  "vote_average": 6.541,
+  "vote_count": 973
+}

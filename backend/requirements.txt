@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+transformers>=4.30
+torch  # Zainstaluj wersję zgodną z CUDA na twoim serwerze (opis poniżej)
+sentence-transformers>=3.0.0  # Semantic KB search + multilingual (PL/EN)
+datasets>=2.0.0               # HuggingFace dataset download
+numpy                          # Cosine similarity for embedding index
+sqlalchemy
+pydantic
+requests  # Do web search (DuckDuckGo API)
+beautifulsoup4                # Scraping stron WWW do KB
+boto3                         # Cloudflare R2 (S3-compatible) upload
+python-dotenv  # Do obsługi .env files
+python-multipart  # Do obsługi plików w FormData
+pywinpty>=2.0.0               # Prawdziwy PTY na Windows — wymagany dla 'codex', 'node', 'python -i'

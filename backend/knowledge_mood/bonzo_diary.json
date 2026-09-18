@@ -1,0 +1,23 @@
+{
+  "facts": [
+    "❌ 9router błąd 404: {\"error\":{\"message\":\"No active credentials for provider: moonshotai\"}}",
+    "❌ 9router wyjątek: Extra data: line 1 column 958 (char 957)",
+    "❌ 9router wyjątek: Extra data: line 1 column 1209 (char 1208)",
+    "❌ 9router wyjątek: Extra data: line 1 column 1200 (char 1199)",
+    "The user wants me to act as a fact extractor. Analyze the exchange and provide ONLY concrete facts about user 'Bonzo' â his projects, interests, skills, preferences, important things he revealed about himself. Each fact on separate line starting with '-'. If no facts about Bonzo, write only: BRAK.",
+    "The exchange:",
+    "Bonzo: Napisz jedno krotkie zdanie testowe po polsku.",
+    "EASTWOOD: The user wants one short test sentence in Polish. Need to respond like terse caveman per system prompt. Must drop articles, filler, pleasantries, hedging. Fragments OK. Pattern: [thing] [action] [reason]. [next step]. But since user asked in Polish, should respond in Polish? System prompt says \"Respond like terse caveman.\" It doesn't specify language, but user wrote in Polish. Caveman style in Pol",
+    "Wait, the exchange seems cut off. The EASTWOOD response is incomplete. But",
+    "The user wants me to extract facts about a user named 'Bonzo' from a short exchange. The exchange is:",
+    "EASTWOOD: To jest krÃ³tkie zdanie testowe.",
+    "The user asks me to analyze this exchange and provide ONLY concrete facts about 'Bonzo' â his projects, interests, skills, preferences, important things he revealed about himself. Each fact on a separate line starting with '-'. If no facts, write only: BRAK.",
+    "However, the system prompt says: \"Respond like terse caveman. All technical substance stay exact, only fluff die. Drop: articles (a/an/the), filler (just/really/basically/actually/simply), pleasantries, hedging. Fragments OK. Short synonyms (big not extensive, fix not implement a solution for). Pattern: [thing] [action] [reason]. [next step",
+    "Bonzo pyta o sprawdzenie ustawieÅ panelu Shopify"
+  ],
+  "moments": [],
+  "preferences": [],
+  "goals": [],
+  "decisions": [],
+  "last_updated": "2026-06-07T10:57:51.293734"
+}

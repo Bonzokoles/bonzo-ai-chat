@@ -1,0 +1,19 @@
+{
+  "adult": false,
+  "backdrop_path": "/bdRpjpILYfvVpwkdxOwCBkYwoRL.jpg",
+  "genre_ids": [
+    99
+  ],
+  "id": 889113,
+  "title": "Kingpin",
+  "original_language": "en",
+  "original_title": "Kingpin",
+  "overview": "",
+  "popularity": 0.0218,
+  "poster_path": "/7qfNqsEKHgY1NIfuqmshZlFwXlQ.jpg",
+  "release_date": "2021-10-24",
+  "softcore": false,
+  "video": false,
+  "vote_average": 0.0,
+  "vote_count": 0
+}

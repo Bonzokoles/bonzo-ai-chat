@@ -1,0 +1,39 @@
+{
+  "packageJsonHash": "c04ba3bd60e123485dc630be264fb2ef",
+  "timestamp": 1780824809519,
+  "data": {
+    "hasUpdates": true,
+    "updates": [
+      {
+        "name": "@voltagent/core",
+        "installed": "0.1.86",
+        "latest": "2.7.6",
+        "type": "major",
+        "packageJson": "dependencies"
+      },
+      {
+        "name": "@voltagent/logger",
+        "installed": "2.0.2",
+        "latest": "2.0.2",
+        "type": "latest",
+        "packageJson": "dependencies"
+      },
+      {
+        "name": "@voltagent/server-hono",
+        "installed": "2.0.13",
+        "latest": "2.0.14",
+        "type": "patch",
+        "packageJson": "dependencies"
+      },
+      {
+        "name": "@voltagent/vercel-ai",
+        "installed": "0.1.18",
+        "latest": "1.0.0",
+        "type": "major",
+        "packageJson": "dependencies"
+      }
+    ],
+    "count": 3,
+    "message": "Found 3 outdated packages:\n  - @voltagent/core: 0.1.86 → 2.7.6 (major)\n  - @voltagent/server-hono: 2.0.13 → 2.0.14 (patch)\n  - @voltagent/vercel-ai: 0.1.18 → 1.0.0 (major)"
+  }
+}

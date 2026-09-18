@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>JIMBO – lokalny chatbox</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="Icons33eeewwee/445334.webFavicons/favicon.ico" type="image/x-icon" />
   <style>
     * {
       box-sizing: border-box;
@@ -42,6 +43,16 @@
       display: flex;
       flex-direction: column;
       gap: 2px;
+    }
+    header .title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .title-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
     }
     header h1 {
       margin: 0;
@@ -387,6 +398,114 @@
       border-bottom: 1px dashed rgba(255,255,255,0.08);
     }
 
+    /* Terminal panel */
+    .term-section {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 8px 12px;
+      flex: 1;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .term-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      gap: 4px;
+    }
+    .term-section-header h3 {
+      margin: 0;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+    .term-controls {
+      display: flex;
+      gap: 4px;
+    }
+    .term-ctrl-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.04);
+      color: var(--text-main);
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .term-ctrl-btn:hover { background: rgba(255,255,255,0.1); }
+    .term-ctrl-btn.connected {
+      border-color: rgba(82,255,143,0.5);
+      color: #52ff8f;
+    }
+    .term-send-model-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(255,200,50,0.35);
+      background: rgba(255,200,50,0.06);
+      color: #ffc832;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .term-send-model-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .term-send-model-btn:not(:disabled):hover { background: rgba(255,200,50,0.14); }
+    .term-clipboard-btn {
+      border-radius: 999px;
+      border: 1px solid rgba(100,200,255,0.35);
+      background: rgba(100,200,255,0.06);
+      color: #64c8ff;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .term-clipboard-btn:hover { background: rgba(100,200,255,0.14); }
+    .term-output {
+      flex: 1;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.7rem;
+      color: #b0e8b0;
+      overflow-y: auto;
+      min-height: 120px;
+      max-height: 220px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .term-input-row {
+      display: flex;
+      gap: 4px;
+      margin-top: 5px;
+    }
+    .term-input-row input {
+      flex: 1;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 6px;
+      color: #b0e8b0;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 0.72rem;
+      padding: 4px 8px;
+      outline: none;
+    }
+    .term-input-row input:focus { border-color: rgba(82,255,143,0.5); }
+    .term-input-row button {
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.05);
+      color: #b0e8b0;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    .term-input-row button:hover { background: rgba(255,255,255,0.1); }
+
     @media (max-width: 960px) {
       .layout {
         grid-template-columns: 220px minmax(0, 1.7fr);
@@ -408,7 +527,10 @@
 <body>
   <header>
     <div class="title">
-      <h1>JIMBO · Lokalny Chat</h1>
+      <div class="title-row">
+        <img class="title-icon" src="Icons33eeewwee/445334.windows/icon_32x32.png" alt="JIMBO icon" />
+        <h1>JIMBO · Lokalny Chat</h1>
+      </div>
       <div class="subtitle">Interfejs pod twoje modele offline, bez ściemy i bez chmury.</div>
     </div>
     <div class="status">
@@ -555,15 +677,151 @@ Nie głaszczesz, nie kłamiesz, nie udajesz coacha.
 Bonzo jest twoim partnerem.  
 Masz być szczery, konkretny, bez marketingowego bełkotu.</pre>
         </div>
-        <div class="right-log">
-          <div class="log-line">[13:11:02] Załadowano model: jimbo-7b-gguf</div>
-          <div class="log-line">[13:11:05] Ustawiono parametry: temp=0.8, top_p=0.9</div>
-          <div class="log-line">[13:12:10] Nowa sesja: BONZO x JIMBO</div>
-          <div class="log-line">[13:12:44] Wiadomość użytkownika · 87 tokenów</div>
-          <div class="log-line">[13:12:45] Odpowiedź modelu · 112 tokenów</div>
+        <div class="term-section">
+          <div class="term-section-header">
+            <h3>Terminal PowerShell</h3>
+            <div class="term-controls">
+              <button id="termConnectBtn" class="term-ctrl-btn" onclick="termToggle()">Połącz</button>
+              <button id="termSendModelBtn" class="term-send-model-btn" onclick="termSendToModel()" disabled>📤 Do modelu</button>
+              <button class="term-clipboard-btn" onclick="termPasteFromClipboard()" title="Skopiuj ze schowka i wyślij do modelu">📋 Ze schowka</button>
+            </div>
+          </div>
+          <div id="termOutput" class="term-output"><span style="color:#555">Kliknij „Połącz" aby otworzyć sesję PowerShell z backendem (port 4149).</span></div>
+          <div class="term-input-row">
+            <input id="termInput" type="text" placeholder="komenda PowerShell..." onkeydown="termKeyDown(event)" disabled autocomplete="off" spellcheck="false" />
+            <button onclick="termSendCmd()" id="termSendBtn" disabled>▶</button>
+          </div>
         </div>
       </div>
     </aside>
   </div>
+
+<script>
+// ── TERMINAL WEBSOCKET ──────────────────────────────────────────────────────
+const TERM_WS_URL = 'ws://localhost:4149/ws/terminal';
+
+let termWS       = null;
+let termConnected = false;
+let termBuffer   = '';   // accumulates all output for "send to model"
+
+function termToggle() {
+  termConnected ? termDisconnect() : termConnect();
+}
+
+function termConnect() {
+  const out = document.getElementById('termOutput');
+  out.innerHTML = '<span style="color:#555">Łączenie z ' + TERM_WS_URL + '…\n</span>';
+  termBuffer = '';
+
+  try {
+    termWS = new WebSocket(TERM_WS_URL);
+  } catch (e) {
+    out.innerHTML += '<span style="color:#ff6b6b">Błąd: ' + e.message + '\n</span>';
+    return;
+  }
+
+  termWS.onopen = () => {
+    termConnected = true;
+    document.getElementById('termConnectBtn').textContent = 'Rozłącz';
+    document.getElementById('termConnectBtn').classList.add('connected');
+    document.getElementById('termInput').disabled  = false;
+    document.getElementById('termSendBtn').disabled = false;
+    document.getElementById('termSendModelBtn').disabled = false;
+    _termAppend('\u001b[32m✓ Połączono z PowerShell\n\u001b[0m', '#52ff8f');
+  };
+
+  termWS.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'output') {
+        termBuffer += msg.data;
+        _termAppend(msg.data);
+      } else if (msg.type === 'error') {
+        _termAppend('Błąd: ' + msg.data + '\n', '#ff6b6b');
+      }
+    } catch (_) {
+      _termAppend(event.data);
+    }
+  };
+
+  termWS.onclose = () => {
+    _termSetDisconnected();
+    _termAppend('\n[Rozłączono]\n', '#555');
+  };
+
+  termWS.onerror = () => {
+    _termAppend('Błąd WebSocket. Upewnij się że backend działa na porcie 4149.\n', '#ff6b6b');
+  };
+}
+
+function termDisconnect() {
+  if (termWS) termWS.close();
+  _termSetDisconnected();
+}
+
+function _termSetDisconnected() {
+  termConnected = false;
+  document.getElementById('termConnectBtn').textContent = 'Połącz';
+  document.getElementById('termConnectBtn').classList.remove('connected');
+  document.getElementById('termInput').disabled   = true;
+  document.getElementById('termSendBtn').disabled  = true;
+  document.getElementById('termSendModelBtn').disabled = true;
+}
+
+function _termAppend(text, color) {
+  const out  = document.getElementById('termOutput');
+  const span = document.createElement('span');
+  if (color) span.style.color = color;
+  span.textContent = text;
+  out.appendChild(span);
+  out.scrollTop = out.scrollHeight;
+}
+
+function termSendCmd() {
+  const input = document.getElementById('termInput');
+  const cmd   = input.value.trim();
+  if (!cmd || !termWS || termWS.readyState !== WebSocket.OPEN) return;
+  _termAppend('> ' + cmd + '\n', '#8888ff');
+  termWS.send(JSON.stringify({ type: 'input', data: cmd + '\n' }));
+  input.value = '';
+}
+
+function termKeyDown(e) {
+  if (e.key === 'Enter') termSendCmd();
+}
+
+// Wkleja ostatnie ~3000 znaków wyniku terminala do pola czatu jako blok kodu
+function termSendToModel() {
+  const textarea = document.querySelector('textarea');
+  if (!termBuffer) return;
+  const snippet = termBuffer.slice(-3000);
+  const block   = '\n\n```terminal\n' + snippet + '\n```\n';
+  textarea.value += block;
+  textarea.focus();
+  textarea.scrollTop = textarea.scrollHeight;
+  // Pulse effect on textarea
+  textarea.style.transition = 'box-shadow 0.3s';
+  textarea.style.boxShadow  = '0 0 0 2px #ffc832';
+  setTimeout(() => { textarea.style.boxShadow = ''; }, 600);
+}
+
+// Wkleja zawartość schowka jako blok terminal do czatu (działa bez połączenia z backendem)
+async function termPasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text.trim()) return;
+    const textarea = document.querySelector('textarea');
+    const block = '\n\n```terminal\n' + text.trim() + '\n```\n';
+    textarea.value += block;
+    textarea.focus();
+    textarea.scrollTop = textarea.scrollHeight;
+    textarea.style.transition = 'box-shadow 0.3s';
+    textarea.style.boxShadow  = '0 0 0 2px #64c8ff';
+    setTimeout(() => { textarea.style.boxShadow = ''; }, 600);
+  } catch (e) {
+    alert('Brak dostępu do schowka. Upewnij się że strona jest otwarta przez HTTPS lub localhost.');
+  }
+}
+</script>
 </body>
 </html>
