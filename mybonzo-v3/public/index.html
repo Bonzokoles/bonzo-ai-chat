@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>BUTCH | SURGICAL_PORTAL_V4.3 — MULTI-PROVIDER AI MESH & CHATBOX</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #020306;
+            --bg-canvas: #04060a;
+            --bg-panel: #060910;
+            --bg-card: #080d16;
+            --bg-active: #0c1220;
+            --border-std: #141a26;
+            --border-str: #1e2738;
+            --accent-gold: #d4a574;
+            --accent-yellow: #d4a574;
+            --accent-red: #d55a6f;
+            --accent-matrix: #00E6A8;
+            --accent-cyan: #00e5ff;
+        }
+        * { border-radius: 0 !important; }
+        body {
+            background: var(--bg-void);
+            color: #e2e8f0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .code-font { font-family: 'JetBrains Mono', 'Space Mono', monospace; }
+        .surgical-container { display: grid; grid-template-columns: 64px 1fr 380px; height: 100vh; position: relative; }
+        .magnetic-sidebar {
+            border-right: 1px solid var(--border-std);
+            background: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0;
+            gap: 12px;
+            position: relative;
+        }
+        .side-btn {
+            font-family: 'Space Mono';
+            font-size: 10px;
+            color: #64748b;
+            border: 1px solid transparent;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .side-btn:hover, .side-btn.active {
+            color: var(--accent-yellow);
+            border-color: var(--accent-yellow);
+            background: rgba(212, 165, 116, 0.08);
+        }
+        .side-btn-red {
+            border-color: rgba(213, 90, 111, 0.4);
+            color: var(--accent-red);
+        }
+        .side-btn-red:hover {
+            background: rgba(213, 90, 111, 0.1);
+            border-color: var(--accent-red);
+            color: #fff;
+        }
+        .canvas-area {
+            background: radial-gradient(circle at 50% 25%, #080c14 0%, var(--bg-void) 100%);
+            padding: 16px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(4, 170px);
+            gap: 1px;
+            background: var(--border-std);
+            border: 1px solid var(--border-std);
+        }
+        .bento-item {
+            background: var(--bg-canvas);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .app-title {
+            font-size: 10px;
+            font-family: 'Space Mono';
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+        }
+        .audit-panel {
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border-std);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            overflow-y: auto;
+        }
+        .surgical-title {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-left: 3px solid var(--accent-matrix);
+            padding-left: 8px;
+            color: var(--accent-gold);
+        }
+        .console-box {
+            background: #000;
+            padding: 8px 10px;
+            border: 1px solid var(--border-std);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: #94a3b8;
+            height: 110px;
+            overflow-y: auto;
+        }
+        .connection-line {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-matrix), var(--accent-cyan), transparent);
+            animation: pulse 3s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+        .agent-node {
+            border: 1px solid var(--border-std);
+            padding: 8px 10px;
+            background: var(--bg-panel);
+            font-size: 0.72rem;
+        }
+
+        /* Square Edge Connection Indicators (Live Connection Heartbeat) */
+        .edge-nodes-strip {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 0px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            align-items: center;
+            pointer-events: none;
+            z-index: 50;
+        }
+        .edge-left-strip { right: 0px; }
+        .edge-right-strip { left: 0px; }
+        .square-edge-node {
+            width: 6px;
+            height: 6px;
+            background: #00e5ff;
+            opacity: 0.35;
+            box-shadow: 0 0 5px rgba(0, 229, 255, 0.4);
+            border-radius: 0px !important;
+            transform: translateX(-50%);
+            transition: all 0.25s ease;
+            animation: squarePulse 3s infinite ease-in-out;
+        }
+        .square-edge-node:nth-child(2) { animation-delay: 0.75s; }
+        .square-edge-node:nth-child(3) { animation-delay: 1.5s; }
+        .square-edge-node:nth-child(4) { animation-delay: 2.25s; }
+
+        @keyframes squarePulse {
+            0%, 100% { opacity: 0.25; transform: translateX(-50%) scale(0.95); }
+            50% { opacity: 0.6; transform: translateX(-50%) scale(1.1); }
+        }
+
+        /* Green Active Utilization State */
+        body.mesh-active .square-edge-node,
+        .square-edge-node.active-use {
+            background: #00E6A8 !important;
+            opacity: 1 !important;
+            box-shadow: 0 0 8px #00E6A8, 0 0 14px rgba(0, 230, 168, 0.7) !important;
+            animation: squareActiveGlow 0.8s infinite alternate ease-in-out !important;
+        }
+
+        @keyframes squareActiveGlow {
+            0% { opacity: 0.75; transform: translateX(-50%) scale(1); }
+            100% { opacity: 1; transform: translateX(-50%) scale(1.35); }
+        }
+
+        /* Right Column Active AI Mesh Provider Cards */
+        .side-mesh-card {
+            background: #04060c;
+            border: 1px solid #141b26;
+            padding: 7px 9px;
+            cursor: pointer;
+            border-radius: 0px !important;
+            transition: all 0.15s ease;
+            font-family: 'JetBrains Mono', 'Space Mono', monospace;
+        }
+        .side-mesh-card:hover {
+            border-color: #00e5ff;
+            background: #080d16;
+        }
+        .side-mesh-card.active {
+            border: 1px solid #00E6A8 !important;
+            background: rgba(0, 230, 168, 0.07) !important;
+            box-shadow: 0 0 10px rgba(0, 230, 168, 0.22);
+        }
+        .smc-name {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+        .side-mesh-card.active .smc-name {
+            color: #ffffff;
+        }
+        .smc-tag {
+            font-size: 8.5px;
+            color: #00E6A8;
+            font-weight: 600;
+        }
+        .smc-model {
+            font-size: 8.5px;
+            color: #64748b;
+            margin: 2px 0 3px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .side-mesh-card.active .smc-model {
+            color: #8ea3c4;
+        }
+        .smc-square-dot {
+            width: 5px;
+            height: 5px;
+            background: #00e5ff;
+            display: inline-block;
+            border-radius: 0px !important;
+        }
+        .side-mesh-card.active .smc-square-dot {
+            background: #00E6A8;
+            box-shadow: 0 0 6px #00E6A8;
+            animation: squarePulse 1.8s infinite;
+        }
+        .smc-status-text {
+            font-size: 8.5px;
+            color: #64748b;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+        .side-mesh-card.active .smc-status-text {
+            color: #00E6A8;
+            font-weight: 700;
+        }
+
+        /* Rectangular Quick Tool Buttons */
+        .sb-rect-btn {
+            width: 100%;
+            padding: 6px 8px;
+            background: #04060c;
+            border: 1px solid #141b26;
+            color: #dce4f0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9.5px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 0px !important;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        .sb-rect-btn:hover {
+            border-color: #00e5ff;
+            background: #090f1a;
+            color: #ffffff;
+            box-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
+        }
+        .sb-rect-tag {
+            font-size: 9px;
+            font-weight: 700;
+            color: #d4a574;
+        }
+        #cf-modal {
+            position: fixed;
+            top: 55px;
+            left: 75px;
+            width: 480px;
+            background: rgba(5, 7, 10, 0.98);
+            border: 1px solid var(--accent-yellow);
+            padding: 20px;
+            z-index: 1000;
+            display: none;
+        }
+        /* Markdown rendering inside chat */
+        .chat-md p { margin-bottom: 8px; line-height: 1.5; }
+        .chat-md pre {
+            background: #05070a;
+            border: 1px solid var(--border-str);
+            padding: 10px;
+            margin: 8px 0;
+            overflow-x: auto;
+            position: relative;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+        .chat-md code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 1px 4px;
+        }
+        .chat-md pre code {
+            background: transparent;
+            padding: 0;
+            color: #00e5ff;
+        }
+        .chat-md ul { list-style: square; padding-left: 18px; margin-bottom: 8px; }
+        .chat-md h3, .chat-md h4 { font-weight: 800; color: var(--accent-yellow); margin: 8px 0 4px 0; }
+    </style>
+</head>
+<body>
+    <!-- Modal: Fleet of Models -->
+    <div id="cf-modal">
+        <div class="flex justify-between items-center pb-2 border-b border-gray-800">
+            <div class="surgical-title">AI_FLEET & OMNIROUTE CATALOG</div>
+            <button onclick="toggleModal()" class="text-xs text-gray-500 hover:text-white code-font">[X]</button>
+        </div>
+        <p class="text-[9px] text-gray-500 code-font mt-2">Darmowe i lokalne modele podpięte pod Smart Router (Cloudflare, OmniRoute, Pollinations, Airforce)</p>
+        <div id="cf-model-list" class="mt-3 space-y-1.5 max-h-[360px] overflow-y-auto"></div>
+        <button onclick="toggleModal()" class="mt-3 w-full border border-gray-800 p-2 text-[10px] text-gray-400 hover:text-white code-font uppercase">CLOSE_CATALOG</button>
+    </div>
+
+    <div class="surgical-container">
+        <!-- Sidebar -->
+        <aside class="magnetic-sidebar">
+            <div class="edge-nodes-strip edge-left-strip" title="Live Column Edge Connection Channel A">
+                <span class="square-edge-node" title="Mesh Channel A - Node 1"></span>
+                <span class="square-edge-node" title="Mesh Channel A - Node 2"></span>
+                <span class="square-edge-node" title="Mesh Channel A - Node 3"></span>
+                <span class="square-edge-node" title="Mesh Channel A - Node 4"></span>
+            </div>
+            <div class="w-10 h-10 bg-[#00E6A8] flex items-center justify-center font-black text-lg text-black mb-4">B</div>
+            <div class="side-btn active" id="btn-nav-bento" onclick="switchView('bento')" title="Dashboard Bento">
+                <span>MESH</span>
+            </div>
+            <div class="side-btn" id="btn-nav-jimbo" onclick="switchView('jimbo')" title="JIMBO Chatbox + Terminal">
+                <span>CHAT</span>
+            </div>
+            <div class="side-btn" onclick="toggleModal()" title="Katalog Modeli">
+                <span>AI_F</span>
+            </div>
+            <div class="side-btn" onclick="runMoaDemo()" title="Uruchom MOA">
+                <span>MOA</span>
+            </div>
+            <div class="side-btn side-btn-red mt-auto" onclick="launchLocalApp()" title="Uruchom lokalny JIMBO Chat (Port 4433)">
+                <span class="text-[8px] font-bold">L_APP</span>
+            </div>
+            <div class="side-btn text-emerald-400 border-emerald-900/40" onclick="location.reload()" title="Odśwież stan">
+                <span class="text-[8px]">SYNC</span>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="canvas-area">
+            <!-- Global Header -->
+            <header class="mb-4 flex justify-between items-center border-b border-gray-900 pb-3">
+                <div class="flex items-center gap-6">
+                    <div>
+                        <h2 class="text-[9px] font-bold tracking-[0.4em] text-gray-500 uppercase code-font">Operational_Mesh_V4.3 // OmniRoute + Free Tiers</h2>
+                        <h1 class="text-2xl font-black italic tracking-tight uppercase">Butch<span class="text-[#ff3300]">_Surgical</span></h1>
+                    </div>
+                    <!-- View Switcher Tabs -->
+                    <div class="flex border border-gray-800 bg-black text-[10px] code-font">
+                        <button onclick="switchView('bento')" id="tab-bento" class="px-3 py-1.5 bg-[#ffcc00] text-black font-bold">1. BENTO_MESH</button>
+                        <button onclick="switchView('jimbo')" id="tab-jimbo" class="px-3 py-1.5 text-gray-400 hover:text-white">2. JIMBO_WORKSPACE (CHAT + PWSH)</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="launchLocalApp()" class="border border-[#ff3300] bg-[#ff3300]/10 hover:bg-[#ff3300] hover:text-black text-[#ff3300] text-[10px] code-font font-bold px-3 py-1.5 transition flex items-center gap-2">
+                        <span>[RUN LOCAL CHAT 4433]</span>
+                    </button>
+                    <div class="text-right code-font text-[10px] pl-3 border-l border-gray-800">
+                        <p id="core-id-display" class="text-gray-500">ID: LOADED</p>
+                        <p class="text-[#ffcc00]">OMNIROUTE: 20128</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- VIEW 1: BENTO OVERVIEW -->
+            <div id="view-bento" class="bento-grid">
+                <!-- 1. Live Providers Mesh -->
+                <div class="bento-item col-span-3 row-span-2">
+                    <div class="flex justify-between items-center">
+                        <span class="app-title">Active AI Mesh Providers</span>
+                        <span class="text-[9px] code-font text-green-400">[ROUTING_LIVE]</span>
+                    </div>
+                    <div id="provider-nodes" class="mt-3 space-y-1.5 overflow-y-auto max-h-[250px]">
+                        <div class="agent-node flex justify-between items-center border-l-2 border-orange-500">
+                            <div>
+                                <span class="code-font text-[10px] text-white">Cloudflare Workers AI</span>
+                                <span class="block text-[8px] text-gray-500">@cf/meta/llama-3.3-70b-instruct-fp8-fast</span>
+                            </div>
+                            <span class="text-green-400 code-font text-[9px]">[10K/DAY FREE]</span>
+                        </div>
+                        <div class="agent-node flex justify-between items-center border-l-2 border-yellow-500">
+                            <div>
+                                <span class="code-font text-[10px] text-white">OmniRoute Gateway (Local)</span>
+                                <span class="block text-[8px] text-gray-500">http://127.0.0.1:20128/v1</span>
+                            </div>
+                            <span class="text-yellow-400 code-font text-[9px]">[PORT 20128]</span>
+                        </div>
+                        <div class="agent-node flex justify-between items-center border-l-2 border-cyan-500">
+                            <div>
+                                <span class="code-font text-[10px] text-white">Pollinations.ai</span>
+                                <span class="block text-[8px] text-gray-500">GPT-4o-mini & DeepSeek keyless gateway</span>
+                            </div>
+                            <span class="text-cyan-400 code-font text-[9px]">[100% FREE]</span>
+                        </div>
+                        <div class="agent-node flex justify-between items-center border-l-2 border-emerald-500">
+                            <div>
+                                <span class="code-font text-[10px] text-white">Airforce Free Tier</span>
+                                <span class="block text-[8px] text-gray-500">Curated community open models</span>
+                            </div>
+                            <span class="text-emerald-400 code-font text-[9px]">[UNLIMITED]</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Financial Overwatch & Savings -->
+                <div class="bento-item col-span-3 row-span-2 border-l border-gray-900">
+                    <div class="flex justify-between items-center">
+                        <span class="app-title">Free Tier Economics</span>
+                        <span class="text-[9px] code-font text-yellow-500">SAVINGS_TRACKER</span>
+                    </div>
+                    <div id="overwatch-data" class="mt-2">
+                        <h3 class="text-4xl font-black text-[#ffcc00]"><span id="saved-usd-display">0.00</span> <span class="text-xs text-gray-500">USD SAVED</span></h3>
+                        <div class="grid grid-cols-2 gap-2 mt-3 code-font text-[10px]">
+                            <div class="bg-black/60 border border-gray-900 p-2">
+                                <p class="text-gray-500 uppercase">Darmowe Tokeny</p>
+                                <p id="tokens-count" class="text-white font-bold text-base mt-1">0</p>
+                            </div>
+                            <div class="bg-black/60 border border-gray-900 p-2">
+                                <p class="text-gray-500 uppercase">Darmowe Sloty</p>
+                                <p id="free-slots-count" class="text-green-400 font-bold text-base mt-1">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. MOA & Action Hub -->
+                <div class="bento-item col-span-2 row-span-2 bg-[#ffcc00]/5">
+                    <span class="app-title">Darmowy Silnik MOA</span>
+                    <p class="text-[9px] text-gray-400 mt-1 code-font">3-etapowa synteza: Draft (CF) -> Critique (Pollinations) -> Synthesis</p>
+                    <div class="mt-3 space-y-2">
+                        <button onclick="runMoaDemo()" id="moa-btn" class="w-full bg-[#ffcc00] text-black font-bold p-2 text-[10px] code-font uppercase hover:bg-yellow-400 transition">
+                            EXECUTE_MOA_SYNTHESIS
+                        </button>
+                        <button onclick="toggleModal()" class="w-full border border-gray-800 text-gray-400 p-2 text-[10px] code-font uppercase hover:text-white transition">
+                            VIEW_MODEL_CATALOG
+                        </button>
+                        <button onclick="switchView('jimbo')" class="w-full border border-cyan-800 text-cyan-400 p-2 text-[10px] code-font uppercase hover:bg-cyan-950 transition">
+                            OPEN_JIMBO_WORKSPACE
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. Quick Terminal -->
+                <div class="bento-item col-span-4 row-span-2 bg-black p-4">
+                    <div class="flex justify-between items-center">
+                        <span class="app-title">Surgical Multi-Router Quick Query</span>
+                        <div class="flex gap-2">
+                            <select id="router-mode" class="bg-black border border-gray-800 text-gray-400 text-[9px] code-font px-2 py-0.5 outline-none">
+                                <option value="free_unlimited">MODE: FREE_UNLIMITED</option>
+                                <option value="speed">MODE: ULTRA_SPEED</option>
+                                <option value="reasoning">MODE: REASONING (R1)</option>
+                                <option value="omniroute">MODE: OMNIROUTE (LOCAL)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="term-out" class="mt-2 h-[110px] code-font text-[9px] text-gray-400 overflow-y-auto bg-black border border-gray-900 p-2">
+                        <span class="text-yellow-500">> BUTCH Multi-Provider AI Terminal online.</span><br>
+                        <span class="text-gray-600">> Wpisz prompt lub komendę. Zapytania kierowane są kaskadowo przez darmowe modele z auto-fallbackiem.</span>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <input id="term-in" onkeydown="if(event.key==='Enter') execQuick()" placeholder="Zadaj szybkie pytanie do darmowej siatki AI..." class="flex-1 bg-transparent border border-gray-800 p-2 text-[10px] text-yellow-400 code-font focus:border-yellow-400 outline-none">
+                        <button onclick="execQuick()" id="send-btn" class="border border-red-600 px-5 text-[10px] text-red-500 font-bold hover:bg-red-600 hover:text-white transition code-font">SEND</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: PERMANENT JIMBO WORKSPACE (FULL CHAT + PWSH TERMINAL) -->
+            <div id="view-jimbo" class="hidden grid grid-cols-12 gap-3 h-[calc(100vh-115px)]">
+                <!-- Col 1: JIMBO AI Chatbox (7 cols) -->
+                <div class="col-span-7 bg-[#0a0e14] border border-[#1a202c] flex flex-direction flex-col h-full">
+                    <!-- Chat Header -->
+                    <div class="p-3 border-b border-[#1a202c] bg-[#11141c] flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 bg-emerald-400"></span>
+                            <span class="text-xs font-bold uppercase code-font text-white">JIMBO AI ASSISTANT</span>
+                            <span class="text-[9px] text-gray-500 code-font">[CODING & ARCHITECTURE]</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="chat-model-select" class="bg-black border border-gray-800 text-yellow-400 text-[10px] code-font px-2 py-1 outline-none">
+                                <option value="auto/best-free">AUTO-ROUTER (Smart Failover)</option>
+                                <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast">CF Llama 3.3 70B (Edge)</option>
+                                <option value="@cf/meta/llama-3.2-3b-instruct">CF Llama 3.2 3B (Fast)</option>
+                                <option value="pollinations/openai">Pollinations GPT-4o-mini</option>
+                                <option value="omniroute/auto">OmniRoute Local (Port 20128)</option>
+                            </select>
+                            <button onclick="clearChat()" class="border border-gray-800 text-gray-400 hover:text-white px-2 py-1 text-[9px] code-font">CLEAR</button>
+                        </div>
+                    </div>
+
+                    <!-- Messages Thread -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 code-font text-xs">
+                        <div class="p-3 bg-[#11141c] border border-gray-900">
+                            <div class="flex justify-between text-[9px] text-gray-500 mb-1">
+                                <span class="text-yellow-400 font-bold">JIMBO_CORE</span>
+                                <span>SYSTEM_READY</span>
+                            </div>
+                            <div class="chat-md text-gray-300">
+                                Jesteś połączony ze zintegrowanym środowiskiem roboczym. Masz dostęp do darmowej siatki modeli oraz lokalnego terminala PowerShell po prawej stronie.
+                                <br><br>
+                                Wpisz zadanie programistyczne lub komendę, którą chcesz zweryfikować.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prompt Quick Chips -->
+                    <div class="p-2 border-t border-[#1a202c] bg-[#0d1117] flex gap-1.5 overflow-x-auto text-[9px] code-font">
+                        <button onclick="injectPrompt('Napisz skrypt PowerShell sprawdzający status portów 20128, 4433 i 4434 z raportem tabelarycznym.')" class="border border-gray-800 hover:border-yellow-400 text-gray-400 hover:text-white px-2 py-0.5 whitespace-nowrap">[CHECK_PORTS_SCRIPT]</button>
+                        <button onclick="injectPrompt('Zbadaj architekturę lokalnego mostka PowerShell i zaproponuj optymalizację kolejki zadań D1.')" class="border border-gray-800 hover:border-yellow-400 text-gray-400 hover:text-white px-2 py-0.5 whitespace-nowrap">[AUDIT_BRIDGE]</button>
+                        <button onclick="injectPrompt('Wygeneruj funkcję w TypeScript do automatycznego przełączania providerów przy błędzie 429.')" class="border border-gray-800 hover:border-yellow-400 text-gray-400 hover:text-white px-2 py-0.5 whitespace-nowrap">[ROUTER_FAILOVER]</button>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="p-3 border-t border-[#1a202c] bg-[#11141c]">
+                        <div class="flex gap-2">
+                            <textarea id="chat-input" rows="2" onkeydown="handleChatKey(event)" placeholder="Wpisz zapytanie do JIMBO... (Enter = Wyślij, Shift+Enter = nowa linia)" class="flex-1 bg-black border border-gray-800 p-2 text-xs text-yellow-300 code-font focus:border-yellow-400 outline-none resize-none"></textarea>
+                            <button onclick="sendChatMessage()" id="btn-chat-send" class="border border-[#ffcc00] bg-[#ffcc00] text-black font-bold text-xs code-font px-4 hover:bg-yellow-400 transition flex items-center justify-center">
+                                SEND
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Col 2: Interactive PowerShell Terminal (5 cols) -->
+                <div class="col-span-5 bg-black border border-[#1a202c] flex flex-direction flex-col h-full">
+                    <!-- Terminal Header -->
+                    <div class="p-3 border-b border-[#1a202c] bg-[#11141c] flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 bg-yellow-400 animate-pulse"></span>
+                            <span class="text-xs font-bold uppercase code-font text-white">PWSH BRIDGE TERMINAL</span>
+                        </div>
+                        <span id="bridge-status-tag" class="text-[9px] code-font text-green-400 bg-green-950/40 border border-green-800 px-1.5 py-0.5">POLLING ACTIVE</span>
+                    </div>
+
+                    <!-- Fast Action Macros -->
+                    <div class="p-2 border-b border-[#1a202c] bg-[#0d1117] grid grid-cols-4 gap-1 text-[9px] code-font text-center">
+                        <button onclick="execPwsh('Get-Date')" class="border border-gray-800 p-1 hover:border-yellow-400 text-gray-300">GET-DATE</button>
+                        <button onclick="execPwsh('git status')" class="border border-gray-800 p-1 hover:border-yellow-400 text-gray-300">GIT STATUS</button>
+                        <button onclick="execPwsh('Get-NetTCPConnection -LocalPort 20128,4433,4434 -State Listen -ErrorAction SilentlyContinue')" class="border border-gray-800 p-1 hover:border-yellow-400 text-gray-300">CHECK PORTS</button>
+                        <button onclick="launchLocalApp()" class="border border-red-800 p-1 hover:border-red-400 text-red-400 font-bold">START 4433</button>
+                    </div>
+
+                    <!-- Terminal Output Screen -->
+                    <div id="pwsh-terminal-screen" class="flex-1 overflow-y-auto p-3 code-font text-[11px] text-gray-300 space-y-1 bg-black">
+                        <div class="text-yellow-500">> PowerShell Terminal Bridge gotowy do pracy.</div>
+                        <div class="text-gray-500">> Środowisko robocze: Windows 11 Pro / PowerShell 7 (Z:\THE_BUCH_DeV).</div>
+                        <div class="text-gray-500">> Polecenia są kolejkowane w D1 i wykonywane przez lokalnego demona.</div>
+                    </div>
+
+                    <!-- Terminal Input Bar -->
+                    <div class="p-3 border-t border-[#1a202c] bg-[#11141c]">
+                        <div class="flex items-center gap-1 bg-black border border-gray-800 p-1">
+                            <span class="text-yellow-400 text-xs code-font px-1.5 font-bold">PS></span>
+                            <input id="pwsh-cmd-input" onkeydown="if(event.key==='Enter') submitPwshInput()" placeholder="Wpisz komendę PowerShell (np. dir, Get-Process)..." class="flex-1 bg-transparent text-xs text-white code-font focus:outline-none">
+                            <button onclick="submitPwshInput()" id="btn-pwsh-run" class="border border-gray-700 bg-gray-900 text-yellow-400 hover:text-white px-3 py-1 text-[10px] code-font font-bold">EXEC</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Overwatch Panel -->
+        <aside class="audit-panel">
+            <div class="edge-nodes-strip edge-right-strip" title="Live Column Edge Connection Channel B">
+                <span class="square-edge-node" title="Mesh Channel B - Node 1"></span>
+                <span class="square-edge-node" title="Mesh Channel B - Node 2"></span>
+                <span class="square-edge-node" title="Mesh Channel B - Node 3"></span>
+                <span class="square-edge-node" title="Mesh Channel B - Node 4"></span>
+            </div>
+
+            <!-- Active AI Mesh Providers Section -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="surgical-title">ACTIVE AI MESH PROVIDERS</h3>
+                    <span class="text-[9px] code-font text-emerald-400 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-emerald-400 inline-block"></span> [MESH_LIVE]
+                    </span>
+                </div>
+                <div id="side-mesh-list" class="space-y-1.5">
+                    <!-- Provider 1: Cloudflare Workers AI -->
+                    <div class="side-mesh-card active" data-provider="cf" data-model="@cf/meta/llama-3.3-70b-instruct-fp8-fast" onclick="selectMeshProvider('@cf/meta/llama-3.3-70b-instruct-fp8-fast', 'cf')">
+                        <div class="flex justify-between items-center">
+                            <span class="smc-name">Cloudflare Workers AI</span>
+                            <span class="smc-tag">[10K/DAY FREE]</span>
+                        </div>
+                        <div class="smc-model">@cf/meta/llama-3.3-70b-instruct-fp8-fast</div>
+                        <div class="flex justify-between items-center mt-1 pt-1 border-t border-[#141b26]">
+                            <div class="flex items-center gap-1.5">
+                                <span class="smc-square-dot"></span>
+                                <span class="smc-status-text">ACTIVE · IN USE</span>
+                            </div>
+                            <span class="text-[9px] text-[#00E6A8] code-font font-bold">[SELECTED]</span>
+                        </div>
+                    </div>
+
+                    <!-- Provider 2: OmniRoute Gateway -->
+                    <div class="side-mesh-card" data-provider="omni" data-model="omniroute/auto" onclick="selectMeshProvider('omniroute/auto', 'omni')">
+                        <div class="flex justify-between items-center">
+                            <span class="smc-name">OmniRoute Gateway (Local)</span>
+                            <span class="smc-tag" style="color:#d4a574;">[PORT 20128]</span>
+                        </div>
+                        <div class="smc-model">http://127.0.0.1:20128/v1</div>
+                        <div class="flex justify-between items-center mt-1 pt-1 border-t border-[#141b26]">
+                            <div class="flex items-center gap-1.5">
+                                <span class="smc-square-dot"></span>
+                                <span class="smc-status-text">STANDBY · READY</span>
+                            </div>
+                            <span class="text-[9px] text-gray-500 code-font">[CLICK TO USE]</span>
+                        </div>
+                    </div>
+
+                    <!-- Provider 3: Pollinations.ai -->
+                    <div class="side-mesh-card" data-provider="pollinations" data-model="pollinations/openai" onclick="selectMeshProvider('pollinations/openai', 'pollinations')">
+                        <div class="flex justify-between items-center">
+                            <span class="smc-name">Pollinations.ai</span>
+                            <span class="smc-tag" style="color:#00e5ff;">[100% FREE]</span>
+                        </div>
+                        <div class="smc-model">GPT-4o-mini &amp; DeepSeek keyless</div>
+                        <div class="flex justify-between items-center mt-1 pt-1 border-t border-[#141b26]">
+                            <div class="flex items-center gap-1.5">
+                                <span class="smc-square-dot"></span>
+                                <span class="smc-status-text">STANDBY · READY</span>
+                            </div>
+                            <span class="text-[9px] text-gray-500 code-font">[CLICK TO USE]</span>
+                        </div>
+                    </div>
+
+                    <!-- Provider 4: Airforce Free Tier -->
+                    <div class="side-mesh-card" data-provider="airforce" data-model="airforce/curated-free" onclick="selectMeshProvider('airforce/curated-free', 'airforce')">
+                        <div class="flex justify-between items-center">
+                            <span class="smc-name">Airforce Free Tier</span>
+                            <span class="smc-tag" style="color:#00E6A8;">[UNLIMITED]</span>
+                        </div>
+                        <div class="smc-model">Curated open community models</div>
+                        <div class="flex justify-between items-center mt-1 pt-1 border-t border-[#141b26]">
+                            <div class="flex items-center gap-1.5">
+                                <span class="smc-square-dot"></span>
+                                <span class="smc-status-text">STANDBY · READY</span>
+                            </div>
+                            <span class="text-[9px] text-gray-500 code-font">[CLICK TO USE]</span>
+                        </div>
+                    </div>
+
+                    <!-- Provider 5: D1 Database & Vector -->
+                    <div class="side-mesh-card" data-provider="d1" data-model="d1/memory-mesh" onclick="selectMeshProvider('d1/memory-mesh', 'd1')">
+                        <div class="flex justify-between items-center">
+                            <span class="smc-name">Cloudflare D1 &amp; Vector</span>
+                            <span class="smc-tag" style="color:#4cb685;">[D1 CONNECTED]</span>
+                        </div>
+                        <div class="smc-model">Persistent session &amp; task queue</div>
+                        <div class="flex justify-between items-center mt-1 pt-1 border-t border-[#141b26]">
+                            <div class="flex items-center gap-1.5">
+                                <span class="smc-square-dot"></span>
+                                <span class="smc-status-text">SYNCED · ONLINE</span>
+                            </div>
+                            <span class="text-[9px] text-gray-500 code-font">[LOCAL]</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Services Section -->
+            <div class="border border-[#141a26] p-2.5 bg-[#04060c] code-font text-[10px]">
+                <div class="text-[#d4a574] font-bold mb-2 uppercase flex justify-between items-center">
+                    <span>Lokalne Usługi Bonzo</span>
+                    <span class="text-[9px] text-[#64748b]">PORT 4149 / 20128</span>
+                </div>
+                <div class="space-y-1.5">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">OmniRoute Gateway:</span>
+                        <span id="stat-omni" class="text-emerald-400 font-bold">[ONLINE 20128]</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">The Buch Hub:</span>
+                        <span id="stat-chat-local" class="text-[#00e5ff] font-bold">[ONLINE 4149]</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">D1 Database:</span>
+                        <span class="text-emerald-400 font-bold">[CONNECTED]</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Bridge Queue:</span>
+                        <span id="stat-bridge-queue" class="text-cyan-400 font-bold">[SYNCED]</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Telemetry Logs -->
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <h3 class="surgical-title">Telemetry_Feed</h3>
+                    <span class="text-[9px] code-font text-gray-500">[LOGS]</span>
+                </div>
+                <div class="console-box" id="tele-logs"></div>
+            </div>
+
+            <!-- Quick Tools (Replacing START M:\CHATBOXJIMBO) -->
+            <div class="mt-auto pt-2 border-t border-[#141a26]">
+                <div class="text-[9px] code-font text-gray-500 uppercase mb-1.5 flex justify-between">
+                    <span>NARZĘDZIA / QUICK TOOLS</span>
+                    <span class="text-[#d4a574]">[K.R.A.F.T.]</span>
+                </div>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <a href="https://ai.mybonzoaiblog.com" target="_blank" class="sb-rect-btn" title="Otwórz Bonzo Media Hub &amp; Chatbox">
+                        <span class="sb-rect-tag">[HUB]</span> MEDIA &amp; KINO
+                    </a>
+                    <button onclick="switchView('jimbo')" class="sb-rect-btn" title="Przełącz na workspace czatu i terminala">
+                        <span class="sb-rect-tag" style="color:#00e5ff;">[CLI]</span> TERMINAL / PI
+                    </button>
+                    <button onclick="execQuickPrompt('/pogoda Warszawa')" class="sb-rect-btn" title="Sprawdź pogodę w terminalu">
+                        <span class="sb-rect-tag" style="color:#00E6A8;">[METEO]</span> POGODA LIVE
+                    </button>
+                    <button onclick="execQuickPrompt('/obrazek neon cyberpunk workspace')" class="sb-rect-btn" title="Generuj obraz FLUX">
+                        <span class="sb-rect-tag" style="color:#d4a574;">[FLUX]</span> GENERATOR AI
+                    </button>
+                    <button onclick="runMoaDemo()" class="sb-rect-btn" title="Uruchom 3-etapową syntezę MOA">
+                        <span class="sb-rect-tag" style="color:#ffcc00;">[MOA]</span> SYNTEZA MOA
+                    </button>
+                    <button onclick="clearChat()" class="sb-rect-btn" title="Wyczyść i zresetuj aktywny czat">
+                        <span class="sb-rect-tag" style="color:#d55a6f;">[RESET]</span> RESET SESJI
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- UI Core Logic -->
+    <script>
+        let currentView = 'bento';
+        let chatHistory = [];
+
+        function switchView(view) {
+            currentView = view;
+            const bentoEl = document.getElementById('view-bento');
+            const jimboEl = document.getElementById('view-jimbo');
+            const tabBento = document.getElementById('tab-bento');
+            const tabJimbo = document.getElementById('tab-jimbo');
+            const navBento = document.getElementById('btn-nav-bento');
+            const navJimbo = document.getElementById('btn-nav-jimbo');
+
+            if (view === 'bento') {
+                bentoEl.classList.remove('hidden');
+                jimboEl.classList.add('hidden');
+                tabBento.className = 'px-3 py-1.5 bg-[#ffcc00] text-black font-bold';
+                tabJimbo.className = 'px-3 py-1.5 text-gray-400 hover:text-white';
+                navBento.classList.add('active');
+                navJimbo.classList.remove('active');
+            } else {
+                bentoEl.classList.add('hidden');
+                jimboEl.classList.remove('hidden');
+                tabBento.className = 'px-3 py-1.5 text-gray-400 hover:text-white';
+                tabJimbo.className = 'px-3 py-1.5 bg-[#ffcc00] text-black font-bold';
+                navBento.classList.remove('active');
+                navJimbo.classList.add('active');
+                document.getElementById('chat-input').focus();
+            }
+        }
+
+        // Launch Local FastAPI Chatbox on Port 4433
+        async function launchLocalApp() {
+            logTele('DISPATCHING LOCAL LAUNCH: M:\\CHATboxJIMBO\\start.bat');
+            try {
+                const res = await fetch('/api/term/launch-local', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                
+                const term = document.getElementById('pwsh-terminal-screen');
+                term.innerHTML += `<div class="text-green-400">> [LOCAL LAUNCH DISPATCHED]: Zadanie #${data.taskId} przekazane do mostka.</div>`;
+                term.innerHTML += `<div class="text-cyan-400">> Otwieram interfejs http://localhost:4433 w nowej karcie...</div>`;
+                term.scrollTop = term.scrollHeight;
+
+                window.open('http://localhost:4433', '_blank');
+            } catch (err) {
+                logTele('LOCAL LAUNCH ERROR: ' + err.message);
+            }
+        }
+
+        // --- LIVE MESH INDICATOR & ACTIVE PROVIDER LOGIC ---
+        function setLedsBusy(busy) {
+            if (busy) {
+                document.body.classList.add('mesh-active');
+                document.querySelectorAll('.square-edge-node').forEach(el => el.classList.add('active-use'));
+            } else {
+                document.body.classList.remove('mesh-active');
+                document.querySelectorAll('.square-edge-node').forEach(el => el.classList.remove('active-use'));
+            }
+        }
+
+        function setActiveMeshProvider(modelOrProvider) {
+            const term = (modelOrProvider || '').toLowerCase();
+            const cards = document.querySelectorAll('.side-mesh-card');
+            cards.forEach(card => {
+                const prov = (card.dataset.provider || '').toLowerCase();
+                const model = (card.dataset.model || '').toLowerCase();
+                
+                let isMatch = false;
+                if (term === 'auto/best-free') {
+                    isMatch = (prov === 'cf');
+                } else if (term.includes('pollinations') || term.includes('openai')) {
+                    isMatch = (prov === 'pollinations');
+                } else if (term.includes('omniroute') || term.includes('20128') || term === 'omni') {
+                    isMatch = (prov === 'omni');
+                } else if (term.includes('airforce')) {
+                    isMatch = (prov === 'airforce');
+                } else if (term.includes('d1') || term.includes('vector')) {
+                    isMatch = (prov === 'd1');
+                } else if (term.includes('llama') || term.includes('@cf') || term.includes('cf') || term === 'workers-ai') {
+                    isMatch = (prov === 'cf');
+                } else {
+                    isMatch = term.includes(prov) || term.includes(model);
+                }
+
+                const st = card.querySelector('.smc-status-text');
+                if (isMatch) {
+                    card.classList.add('active');
+                    if (st) st.textContent = 'ACTIVE · IN USE';
+                } else {
+                    card.classList.remove('active');
+                    if (st) st.textContent = 'STANDBY · READY';
+                }
+            });
+        }
+
+        function selectMeshProvider(modelId, providerKey) {
+            const sel = document.getElementById('chat-model-select');
+            if (sel) {
+                let matched = false;
+                for (let opt of sel.options) {
+                    if (opt.value === modelId) {
+                        sel.value = opt.value;
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    for (let opt of sel.options) {
+                        if (opt.value.toLowerCase().includes(providerKey.toLowerCase())) {
+                            sel.value = opt.value;
+                            matched = true;
+                            break;
+                        }
+                    }
+                }
+                if (!matched && modelId) {
+                    const opt = document.createElement('option');
+                    opt.value = modelId;
+                    opt.textContent = modelId;
+                    sel.appendChild(opt);
+                    sel.value = modelId;
+                }
+            }
+            setActiveMeshProvider(providerKey || modelId);
+            logTele(`MESH PROVIDER SELECTED: ${providerKey.toUpperCase()} [${modelId}]`);
+            setLedsBusy(true);
+            setTimeout(() => setLedsBusy(false), 900);
+        }
+
+        function execQuickPrompt(prompt) {
+            const input = document.getElementById('term-in');
+            if (input) {
+                input.value = prompt;
+                execQuick();
+            } else {
+                injectPrompt(prompt);
+                sendChatMessage();
+            }
+        }
+
+        // --- JIMBO CHAT LOGIC ---
+        function handleChatKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        }
+
+        function injectPrompt(text) {
+            document.getElementById('chat-input').value = text;
+            document.getElementById('chat-input').focus();
+        }
+
+        function clearChat() {
+            chatHistory = [];
+            document.getElementById('chat-messages').innerHTML = `
+                <div class="p-3 bg-[#11141c] border border-gray-900">
+                    <div class="flex justify-between text-[9px] text-gray-500 mb-1">
+                        <span class="text-yellow-400 font-bold">JIMBO_CORE</span>
+                        <span>SESSION_CLEARED</span>
+                    </div>
+                    <div class="chat-md text-gray-300">
+                        Czat wyczyszczony. Wpisz nowe zadanie lub wybierz szablon.
+                    </div>
+                </div>
+            `;
+            logTele('CHAT SESSION CLEARED');
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const model = document.getElementById('chat-model-select').value;
+            input.value = '';
+
+            const container = document.getElementById('chat-messages');
+
+            // Turn LEDs active green & highlight model
+            setLedsBusy(true);
+            setActiveMeshProvider(model);
+
+            // Append User Msg
+            container.innerHTML += `
+                <div class="p-3 bg-[#181c26] border border-gray-800">
+                    <div class="flex justify-between text-[9px] text-gray-400 mb-1">
+                        <span class="text-yellow-400 font-bold">BONZO</span>
+                        <span>${new Date().toLocaleTimeString()}</span>
+                    </div>
+                    <div class="text-white">${escapeHtml(message)}</div>
+                </div>
+            `;
+
+            // Append Loading Indicator
+            const loadId = 'load-' + Date.now();
+            container.innerHTML += `
+                <div id="${loadId}" class="p-3 bg-[#11141c] border border-gray-900 text-yellow-400">
+                    <span class="animate-pulse">> JIMBO myśli [MODEL: ${model}]...</span>
+                </div>
+            `;
+            container.scrollTop = container.scrollHeight;
+
+            chatHistory.push({ role: 'user', content: message });
+
+            try {
+                const res = await fetch('/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
+                            { role: 'system', content: 'Jesteś JIMBO — Senior Software Architect & Automation Guru. Odpowiadasz Bonzo z chirurgiczną precyzją techniczną. Zero lania wody, kod gotowy do wdrożenia, komendy w PowerShell.' },
+                            ...chatHistory.slice(-6)
+                        ]
+                    })
+                });
+
+                const data = await res.json();
+                document.getElementById(loadId)?.remove();
+
+                if (data.choices && data.choices[0]) {
+                    const reply = data.choices[0].message.content;
+                    chatHistory.push({ role: 'assistant', content: reply });
+                    
+                    const routing = data._routing || {};
+                    if (routing.provider) setActiveMeshProvider(routing.provider);
+                    const routingTag = routing.provider ? `[${routing.provider.toUpperCase()} / ${data.model}] · ${routing.latency_ms || 0}ms` : `[${data.model}]`;
+
+                    container.innerHTML += `
+                        <div class="p-3 bg-[#11141c] border border-gray-900">
+                            <div class="flex justify-between text-[9px] text-gray-500 mb-1.5">
+                                <span class="text-yellow-400 font-bold">JIMBO</span>
+                                <span class="text-cyan-400">${routingTag}</span>
+                            </div>
+                            <div class="chat-md text-gray-200">${renderMarkdown(reply)}</div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML += `
+                        <div class="p-3 bg-red-950/30 border border-red-800 text-red-400">
+                            > BLAD ODPOWIEDZI AI: ${escapeHtml(JSON.stringify(data))}
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                document.getElementById(loadId)?.remove();
+                container.innerHTML += `
+                    <div class="p-3 bg-red-950/30 border border-red-800 text-red-400">
+                        > BLAD SIECI: ${escapeHtml(err.message)}
+                    </div>
+                `;
+            } finally {
+                setLedsBusy(false);
+            }
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- POWERSHELL BRIDGE TERMINAL LOGIC ---
+        function submitPwshInput() {
+            const input = document.getElementById('pwsh-cmd-input');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+            input.value = '';
+            execPwsh(cmd);
+        }
+
+        async function execPwsh(command) {
+            const screen = document.getElementById('pwsh-terminal-screen');
+            screen.innerHTML += `<div class="text-yellow-400 mt-2 font-bold">PS Z:\\THE_BUCH_DeV> ${escapeHtml(command)}</div>`;
+            screen.innerHTML += `<div class="text-gray-500" id="task-status-line">> [QUEUED]: Oczekiwanie na lokalny demon...</div>`;
+            screen.scrollTop = screen.scrollHeight;
+
+            try {
+                const res = await fetch('/api/term/exec', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: command })
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    pollTaskResult(json.taskId);
+                } else {
+                    screen.innerHTML += `<div class="text-red-500">> [BLAD KOLEJKOWANIA]: ${json.error}</div>`;
+                }
+            } catch (e) {
+                screen.innerHTML += `<div class="text-red-500">> [BLAD SIECI]: ${e.message}</div>`;
+            }
+            screen.scrollTop = screen.scrollHeight;
+        }
+
+        async function pollTaskResult(taskId) {
+            const screen = document.getElementById('pwsh-terminal-screen');
+            let attempts = 0;
+            const maxAttempts = 30;
+
+            const interval = setInterval(async () => {
+                attempts++;
+                try {
+                    const res = await fetch(`/api/term/status/${taskId}`);
+                    const json = await res.json();
+
+                    if (json.success && json.task) {
+                        const t = json.task;
+                        if (t.status === 'completed' || t.status === 'failed') {
+                            clearInterval(interval);
+                            document.getElementById('task-status-line')?.remove();
+                            
+                            const color = t.status === 'completed' ? 'text-green-400' : 'text-red-400';
+                            screen.innerHTML += `
+                                <div class="${color} whitespace-pre-wrap mt-1">${escapeHtml(t.result || '[BRAK_WYJSCIA]')}</div>
+                                <div class="text-gray-600 text-[9px] border-b border-gray-900 pb-1">> Status: ${t.status.toUpperCase()} (${t.updated_at})</div>
+                            `;
+                            screen.scrollTop = screen.scrollHeight;
+                            return;
+                        }
+                    }
+                } catch (_) {}
+
+                if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    document.getElementById('task-status-line')?.remove();
+                    screen.innerHTML += `<div class="text-orange-400">> [TIMEOUT]: Brak odpowiedzi mostka w ciągu 25 sekund. Sprawdź czy node bridge_goose.js jest uruchomiony na PC.</div>`;
+                    screen.scrollTop = screen.scrollHeight;
+                }
+            }, 800);
+        }
+
+        // Quick Execute from Bento
+        async function execQuick() {
+            const input = document.getElementById('term-in');
+            const prompt = input.value.trim();
+            if(!prompt) return;
+
+            const term = document.getElementById('term-out');
+            const reqMode = document.getElementById('router-mode').value;
+            term.innerHTML += `<br><span class="text-yellow-400">> [USER]: ${prompt}</span>`;
+            term.innerHTML += `<br><span class="text-gray-500">> [ROUTING (${reqMode})]: Przetwarzanie przez darmową siatkę...</span>`;
+            term.scrollTop = term.scrollHeight;
+            input.value = '';
+
+            setLedsBusy(true);
+            try {
+                const res = await fetch('/api/smart-router/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message: prompt, requirement: reqMode })
+                });
+                const json = await res.json();
+                if(json.success) {
+                    const d = json.data;
+                    if (d.provider) setActiveMeshProvider(d.provider);
+                    term.innerHTML += `<br><span class="text-green-400">> [${d.provider.toUpperCase()} / ${d.model}] (${d.latency_ms}ms, saved $${d.saved_usd}):</span><br><span class="text-gray-200">${escapeHtml(d.content)}</span>`;
+                } else {
+                    term.innerHTML += `<br><span class="text-red-500">> [BLAD]: ${json.error}</span>`;
+                }
+            } catch(err) {
+                term.innerHTML += `<br><span class="text-red-500">> [BLAD SIECI]: ${err.message}</span>`;
+            } finally {
+                setLedsBusy(false);
+            }
+            term.scrollTop = term.scrollHeight;
+            refresh();
+        }
+
+        async function runMoaDemo() {
+            const btn = document.getElementById('moa-btn');
+            if (btn) {
+                btn.textContent = 'EXECUTING_CHAIN...';
+                btn.disabled = true;
+            }
+
+            setLedsBusy(true);
+            logTele('MOA CHAIN INITIATED (Draft -> Critique -> Synthesis)');
+            try {
+                const res = await fetch('/api/agents/moa-run', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ instruction: 'Podaj zwięzłą architekturę mikroserwisów odporną na awarie pojedynczego dostawcy AI' })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    logTele(`MOA COMPLETED: ${data.chain.join(' -> ')} (Saved $${data.total_saved_usd})`);
+                    if (currentView === 'jimbo') {
+                        const container = document.getElementById('chat-messages');
+                        container.innerHTML += `
+                            <div class="p-3 bg-[#11141c] border border-yellow-800 text-yellow-300">
+                                <div class="font-bold mb-1">> WYNIK SYNTEZY MOA [${data.chain.join(' -> ')}]:</div>
+                                <div class="chat-md text-gray-200">${renderMarkdown(data.output)}</div>
+                            </div>
+                        `;
+                        container.scrollTop = container.scrollHeight;
+                    }
+                }
+            } catch(e) {
+                logTele('MOA ERROR: ' + e.message);
+            } finally {
+                setLedsBusy(false);
+                if (btn) {
+                    btn.textContent = 'EXECUTE_MOA_SYNTHESIS';
+                    btn.disabled = false;
+                }
+            }
+            refresh();
+        }
+
+        async function toggleModal() {
+            const m = document.getElementById('cf-modal');
+            m.style.display = m.style.display === 'block' ? 'none' : 'block';
+            if(m.style.display === 'block') loadModelFleet();
+        }
+
+        async function loadModelFleet() {
+            const list = document.getElementById('cf-model-list');
+            list.innerHTML = '<div class="text-[10px] code-font text-gray-500">Pobieranie floty modeli...</div>';
+            try {
+                const res = await fetch('/api/smart-router/models');
+                const data = await res.json();
+                const all = [...(data.base_free_models || []), ...(data.omniroute_models || [])];
+                list.innerHTML = all.map(m => `
+                    <div class="agent-node flex justify-between items-center border-l-2 border-yellow-600">
+                        <div>
+                            <span class="code-font text-[10px] text-gray-200">${m.name || m.display_name || m.id}</span>
+                            <span class="block code-font text-[8px] text-gray-500">${m.provider || 'free_tier'}</span>
+                        </div>
+                        <button onclick="selectModel('${m.id}')" class="text-[#ffcc00] border border-yellow-600/30 px-2 py-1 text-[8px] hover:bg-yellow-600 hover:text-black">WYBIERZ</button>
+                    </div>
+                `).join('');
+            } catch(e) {
+                list.innerHTML = '<div class="text-[10px] text-red-500">Błąd pobierania floty modeli</div>';
+            }
+        }
+
+        function selectModel(id) {
+            document.getElementById('chat-model-select').value = id;
+            toggleModal();
+            switchView('jimbo');
+        }
+
+        function logTele(msg) {
+            const container = document.getElementById('tele-logs');
+            const log = document.createElement('div');
+            log.className = 'text-[9px] border-b border-gray-900 py-1 code-font';
+            log.innerHTML = `<span class="text-yellow-500">></span> [${new Date().toLocaleTimeString()}] ${escapeHtml(msg)}`;
+            container.insertBefore(log, container.firstChild);
+            if (container.children.length > 25) container.lastChild.remove();
+        }
+
+        async function refresh() {
+            try {
+                const res = await fetch('/api/mesh/status');
+                const data = await res.json();
+                document.getElementById('core-id-display').textContent = 'CORE_ID: ' + Math.random().toString(16).slice(2, 8).toUpperCase();
+                document.getElementById('free-slots-count').textContent = data.operational_data.active_free_slots;
+                document.getElementById('tokens-count').textContent = (data.operational_data.stats.total_tokens || 0).toLocaleString();
+                
+                const tokens = data.operational_data.stats.total_tokens || 0;
+                const saved = (tokens / 1000000) * 5.0;
+                document.getElementById('saved-usd-display').textContent = saved.toFixed(2);
+                logTele(`MESH_TELEMETRY_SYNC: ${data.operational_data.active_free_slots} active slots`);
+            } catch(e) {}
+        }
+
+        // Markdown minimal helper
+        function renderMarkdown(text) {
+            if (!text) return '';
+            let html = text
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/```([a-z]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+                    const esc = code.replace(/"/g, '&quot;');
+                    return `
+                        <div class="my-2 border border-gray-800 bg-black">
+                            <div class="flex justify-between items-center bg-[#11141c] px-2 py-1 text-[9px] code-font text-gray-400 border-b border-gray-800">
+                                <span>${lang || 'CODE'}</span>
+                                <div class="flex gap-2">
+                                    <button onclick="navigator.clipboard.writeText(\`${esc}\`)" class="hover:text-yellow-400">[COPY]</button>
+                                    <button onclick="execPwsh(\`${esc}\`)" class="text-cyan-400 hover:text-white">[RUN IN TERMINAL]</button>
+                                </div>
+                            </div>
+                            <pre><code class="text-cyan-300">${code}</code></pre>
+                        </div>
+                    `;
+                })
+                .replace(/`([^`]+)`/g, '<code class="bg-gray-800 px-1 text-yellow-300">$1</code>')
+                .replace(/^### (.*$)/gim, '<h3 class="text-xs font-bold text-yellow-400 mt-2">$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2 class="text-sm font-bold text-yellow-400 mt-2">$1</h2>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                .replace(/\n/g, '<br>');
+            return html;
+        }
+
+        function escapeHtml(text) {
+            return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Model selector change listener
+        document.getElementById('chat-model-select')?.addEventListener('change', (e) => {
+            setActiveMeshProvider(e.target.value);
+            logTele(`ACTIVE MODEL CHANGED: ${e.target.value}`);
+            setLedsBusy(true);
+            setTimeout(() => setLedsBusy(false), 600);
+        });
+
+        // Initialize active mesh provider indicator
+        const initialModel = document.getElementById('chat-model-select')?.value || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+        setActiveMeshProvider(initialModel);
+
+        refresh();
+        setInterval(refresh, 12000);
+    </script>
+</body>
+</html>

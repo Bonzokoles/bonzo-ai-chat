@@ -1,0 +1,11 @@
+{
+  "name": "mybonzo-v3",
+  "version": "0.4.0",
+  "type": "module",
+  "devDependencies": {
+    "wrangler": "latest"
+  },
+  "dependencies": {
+    "hono": "^4.0.0"
+  }
+}

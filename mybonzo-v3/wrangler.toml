@@ -1,0 +1,26 @@
+name = "mybonzo-v3"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mybonzo"
+database_id = "84f0f3cb-7778-4cc4-a6ba-e823ef52f1f3"
+
+[ai]
+binding = "AI"
+
+routes = [
+  { pattern = "mybonzo.com/*", zone_name = "mybonzo.com" },
+  { pattern = "www.mybonzo.com/*", zone_name = "mybonzo.com" }
+]
+
+[vars]
+OMNIROUTE_URL = "http://127.0.0.1:20128/v1"
+OMNIROUTE_API_KEY = "oma_live_sGrlekYFf0gd7wE7qRn1tTq4yq8b698fHdA0JLuLl-A"
+DEFAULT_REQUIREMENT = "free_unlimited"

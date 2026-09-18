@@ -247,6 +247,13 @@ init_db()
 embed_module.start_background_build()  # semantic index buduje się w tle
 print("[OK] Backend gotowy! (embeddings budują się w tle)")
 
+# Modular Addons System (Bonzo Media Hub, Radio, Fun & Lifestyle)
+try:
+    from addons.addons_manager import init_addons
+    init_addons(app, mcp_registry, TASK_PROFILES)
+except Exception as _addons_exc:
+    print(f"[WARN] Addons initialization skipped: {_addons_exc}")
+
 class ChatRequest(BaseModel):
     messages: List[dict]  # [{role: "user"|'assistant'|'system', text: "..."}]
     max_tokens: int = 512
@@ -1878,6 +1885,11 @@ async def _serve_favicon():
 @app.get("/ui-icon.png", include_in_schema=False)
 async def _serve_ui_icon():
     return _FileResponse(str(_FRONTEND_DIR / "Icons33eeewwee" / "445334.windows" / "icon_32x32.png"), media_type="image/png")
+
+# Serve frontend addons static assets
+if (_FRONTEND_DIR / "addons").exists():
+    from fastapi.staticfiles import StaticFiles as _StaticFiles
+    app.mount("/addons", _StaticFiles(directory=str(_FRONTEND_DIR / "addons")), name="frontend_addons")
 
 
 if __name__ == "__main__":
