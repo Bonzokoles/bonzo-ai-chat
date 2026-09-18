@@ -21,9 +21,12 @@ const UI = {
   defaultTaskProfile: 'shop_help',
 };
 
-// ── State ──────────────────────────────────────────────────────────────────
+const defaultApi = (typeof window !== 'undefined' && window.location.hostname && !['localhost', '127.0.0.1'].includes(window.location.hostname))
+  ? 'https://mybonzo-v3.stolarnia-ams.workers.dev'
+  : 'http://localhost:4149';
+
 const S = {
-  apiBase: readStored('eastwood-api', 'jimbo-api', 'http://localhost:4149'),
+  apiBase: readStored('eastwood-api', 'jimbo-api', defaultApi),
   model: readStored('eastwood-model', 'jimbo-model', ''),
   taskProfile: readStored('eastwood-task-profile', null, 'shop_help'),
   temperature: parseFloat(readStored('eastwood-temp', 'jimbo-temp', '0.6')),

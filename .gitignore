@@ -26,6 +26,7 @@ The_brain/movies_api/
 
 # Build output
 dist/
+dist-pages/
 .astro/
 release/
 release-new/
