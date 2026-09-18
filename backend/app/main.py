@@ -3,14 +3,15 @@ import sys
 import io
 import os
 
-if (
-    sys.platform == 'win32'
-    and 'pytest' not in sys.modules
-    and all(hasattr(stream, 'buffer') for stream in (sys.stdout, sys.stderr))
-):
+if sys.platform == 'win32' and 'pytest' not in sys.modules:
     try:
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+        if hasattr(sys.stdout, 'buffer'):
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    except Exception:
+        pass
+    try:
+        if hasattr(sys.stderr, 'buffer'):
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
     except Exception:
         pass
 
