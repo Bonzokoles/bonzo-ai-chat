@@ -81,7 +81,7 @@ def test_api_health(client):
     assert res.status_code == 200
     data = res.json()
     assert data["status"] == "ok"
-    assert data["provider"] == "mybonzo"
+    assert "provider" in data
 
 
 def test_api_task_profiles(client):

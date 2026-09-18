@@ -3,8 +3,11 @@ import sys
 import io
 import os
 
-# Force UTF-8 encoding for Windows console (skip under pytest)
-if sys.platform == 'win32' and 'pytest' not in sys.modules and hasattr(sys.stdout, 'buffer'):
+if (
+    sys.platform == 'win32'
+    and 'pytest' not in sys.modules
+    and all(hasattr(stream, 'buffer') for stream in (sys.stdout, sys.stderr))
+):
     try:
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
