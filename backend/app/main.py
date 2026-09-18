@@ -3,10 +3,13 @@ import sys
 import io
 import os
 
-# Force UTF-8 encoding for Windows console
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+# Force UTF-8 encoding for Windows console (skip under pytest)
+if sys.platform == 'win32' and 'pytest' not in sys.modules and hasattr(sys.stdout, 'buffer'):
+    try:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+    except Exception:
+        pass
 
 from dotenv import load_dotenv
 from pathlib import Path
