@@ -391,8 +391,8 @@
   }
 
   function highlightCurrentTrack() {
-    document.querySelectorAll('.bad-track-item').forEach((item, idx) => {
-      if (idx === State.currentTrackIndex) {
+    document.querySelectorAll('.bad-track-item').forEach(item => {
+      if (Number(item.dataset.idx) === State.currentTrackIndex) {
         item.classList.add('playing');
       } else {
         item.classList.remove('playing');
@@ -459,8 +459,8 @@
       return;
     }
 
-    listEl.innerHTML = matched.map((t, idx) => `
-      <div class="bad-track-item ${idx === State.currentTrackIndex ? 'playing' : ''}" data-idx="${State.tracks.indexOf(t)}">
+    listEl.innerHTML = matched.map((t) => `
+      <div class="bad-track-item ${State.tracks.indexOf(t) === State.currentTrackIndex ? 'playing' : ''}" data-idx="${State.tracks.indexOf(t)}">
         <div class="bad-track-meta">
           <div class="bad-track-title">${t.title}</div>
           <div class="bad-track-artist">${t.artist} (${t.size_mb} MB)</div>
@@ -641,6 +641,14 @@
   }
 
   // 7. Drawer Navigation
+  function openDrawer() {
+    State.drawerOpen = true;
+    const drawer = document.getElementById('bonzo-addons-drawer');
+    const btn = document.getElementById('btn-hub-addon');
+    if (drawer) drawer.classList.add('open');
+    if (btn) btn.classList.add('active');
+  }
+
   function toggleDrawer() {
     State.drawerOpen = !State.drawerOpen;
     const drawer = document.getElementById('bonzo-addons-drawer');
@@ -741,7 +749,7 @@
           e.stopPropagation();
           input.value = '';
           const f = val.replace('/film ', '').trim();
-          toggleDrawer();
+          openDrawer();
           switchTab('films');
           renderFilmGrid(f);
         } else if (val.startsWith('/pogoda')) {
@@ -749,7 +757,7 @@
           e.stopPropagation();
           input.value = '';
           const city = val.replace('/pogoda', '').trim() || 'Warszawa';
-          toggleDrawer();
+          openDrawer();
           switchTab('fun');
           loadWeather(city);
         } else if (val.startsWith('/obrazek ')) {
@@ -757,7 +765,7 @@
           e.stopPropagation();
           input.value = '';
           const p = val.replace('/obrazek ', '').trim();
-          toggleDrawer();
+          openDrawer();
           switchTab('fun');
           generateImage(p);
         }
