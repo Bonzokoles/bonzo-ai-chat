@@ -509,9 +509,8 @@ app.post('/api/knowledge/upload', (c) => {
   return c.json({ success: true, count: 0 });
 });
 
-app.post('/api/tts', (c) => {
-  return c.text('EDGE_TTS_OFFLINE', 204);
-});
+app.get('/api/tts', () => new Response(null, { status: 204 }));
+app.post('/api/tts', () => new Response(null, { status: 204 }));
 
 app.get('/api/memory', (c) => {
   return c.json({ memory: 'Cloudflare Edge AI Mesh Active. Modele gotowe do pracy.' });
