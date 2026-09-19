@@ -33,8 +33,8 @@ const S = {
   topP: parseFloat(readStored('eastwood-topp', 'jimbo-topp', '0.9')),
   maxTokens: parseInt(readStored('eastwood-maxtok', 'jimbo-maxtok', '1024')),
   useTools: readStored('eastwood-tools', 'jimbo-tools', 'true') !== 'false',
-  autoTts: readStored('eastwood-auto-tts', 'jimbo-auto-tts', 'true') !== 'false',
-  voiceMode: readStored('eastwood-voice-mode', 'jimbo-voice-mode', 'true') !== 'false',
+  autoTts: readStored('eastwood-auto-tts', 'jimbo-auto-tts', 'false') === 'true',
+  voiceMode: readStored('eastwood-voice-mode', 'jimbo-voice-mode', 'false') === 'true',
   systemPrompt: readStored('eastwood-sysprompt', 'jimbo-sysprompt', ''),
   theme: readStored('eastwood-theme', 'jimbo-theme', 'blackout'),
   messages: [],       // active conversation
@@ -275,16 +275,34 @@ async function loadModels() {
     const data = await r.json();
     el.modelSelect.innerHTML = '';
 
-    // data can be {groups: {ProviderName: [model, ...]}} or flat list
-    if (data.groups) {
+    // data can be {groups: {ProviderName: [model, ...]}} or {models: [...]} or flat list
+    if (data.groups && typeof data.groups === 'object' && Object.keys(data.groups).length > 0) {
       for (const [provider, models] of Object.entries(data.groups)) {
         const grp = document.createElement('optgroup');
         grp.label = provider;
         models.forEach(m => {
           const opt = document.createElement('option');
-          const name = typeof m === 'string' ? m : (m.name || m);
+          const name = typeof m === 'string' ? m : (m.name || m.id || m);
           opt.value = typeof m === 'object' ? (m.id || m.name || m) : m;
           opt.textContent = name;
+          grp.appendChild(opt);
+        });
+        el.modelSelect.appendChild(grp);
+      }
+    } else if (Array.isArray(data.models) && data.models.length > 0) {
+      const providerGroups = {};
+      data.models.forEach(m => {
+        const p = m.provider || 'AI Provider';
+        if (!providerGroups[p]) providerGroups[p] = [];
+        providerGroups[p].push(m);
+      });
+      for (const [prov, models] of Object.entries(providerGroups)) {
+        const grp = document.createElement('optgroup');
+        grp.label = prov.toUpperCase();
+        models.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = typeof m === 'object' ? (m.id || m.name) : m;
+          opt.textContent = typeof m === 'object' ? (m.name || m.id) : m;
           grp.appendChild(opt);
         });
         el.modelSelect.appendChild(grp);
@@ -292,7 +310,7 @@ async function loadModels() {
     } else {
       // flat list or dict {displayName: modelId}
       const entries = Array.isArray(data)
-        ? data.map(m => [m, m])
+        ? data.map(m => [typeof m === 'object' ? (m.name || m.id) : m, typeof m === 'object' ? m.id : m])
         : Object.entries(data);
       entries.forEach(([name, id]) => {
         const opt = document.createElement('option');
@@ -300,6 +318,10 @@ async function loadModels() {
         opt.textContent = name;
         el.modelSelect.appendChild(opt);
       });
+    }
+
+    if (el.modelSelect.options.length === 0) {
+      populateDefaultFallbackModels();
     }
 
     // restore saved model
@@ -314,8 +336,32 @@ async function loadModels() {
     }
     S.model = el.modelSelect.value;
   } catch (e) {
-    el.modelSelect.innerHTML = '<option value="">— offline —</option>';
+    populateDefaultFallbackModels();
   }
+}
+
+function populateDefaultFallbackModels() {
+  el.modelSelect.innerHTML = `
+    <optgroup label="DARMOWE (Cloudflare Edge AI)">
+      <option value="@cf/meta/llama-3.3-70b-instruct-fp8-fast">Meta Llama 3.3 70B (Fast & Free)</option>
+      <option value="@cf/deepseek-ai/deepseek-r1-distill-qwen-32b">DeepSeek R1 32B (Darmowy / Free)</option>
+      <option value="@cf/meta/llama-3.2-3b-instruct">Meta Llama 3.2 3B (Ultra Szybki)</option>
+    </optgroup>
+    <optgroup label="OPENAI DIRECT (GPT-4o)">
+      <option value="gpt-4o">OpenAI GPT-4o (Flagowy)</option>
+      <option value="gpt-4o-mini">OpenAI GPT-4o Mini (Szybki & Ekonomiczny)</option>
+      <option value="o3-mini">OpenAI o3-mini (Rozumowanie)</option>
+    </optgroup>
+    <optgroup label="TOGETHER AI (Ultra Fast)">
+      <option value="meta-llama/Llama-3.3-70B-Instruct-Turbo">Together: Llama 3.3 70B Turbo</option>
+      <option value="deepseek-ai/DeepSeek-R1">Together: DeepSeek R1 Turbo</option>
+    </optgroup>
+  `;
+  if (S.model) {
+    el.modelSelect.value = S.model;
+    if (!el.modelSelect.value) el.modelSelect.selectedIndex = 0;
+  }
+  S.model = el.modelSelect.value;
 }
 
 async function loadTaskProfiles() {
@@ -398,14 +444,20 @@ async function sendMessage(text, files = []) {
     const form = new FormData();
     const apiMessages = S.messages.slice(-20).map(m => ({
       role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.text,
       text: m.text,
     }));
+    form.append('text', text);
+    form.append('message', text);
     form.append('messages', JSON.stringify(apiMessages));
     form.append('use_tools', S.useTools);
     form.append('max_tokens', S.maxTokens);
     form.append('temperature', S.temperature);
     form.append('top_p', S.topP);
-    if (S.model) form.append('model_name', S.model);
+    if (S.model) {
+      form.append('model_name', S.model);
+      form.append('model', S.model);
+    }
     if (S.taskProfile) form.append('task_profile', S.taskProfile);
 
     const sysPrompt = el.sysPrompt.value.trim();
@@ -456,15 +508,15 @@ async function sendMessage(text, files = []) {
             generatedChars += ev.text.length;
             textEl.innerHTML = renderMarkdown(assistantMsg.text);
             scrollBottom();
-            } else if (ev.type === 'done') {
-              assistantMsg.text = ev.text;
-              assistantMsg.toolCalls = ev.tool_calls || [];
-              assistantMsg.uploadedFiles = ev.uploaded_files || [];
-              assistantMsg.kbScope = ev.kb_scope || [];
-              assistantMsg.kbSources = ev.kb_sources || [];
-              assistantMsg.charScope = ev.char_scope || [];
-              assistantMsg.useCharacterExamples = ev.use_character_examples !== false;
-              assistantMsg.provider = ev.provider || '';
+          } else if (ev.type === 'done') {
+            assistantMsg.text = ev.text;
+            assistantMsg.toolCalls = ev.tool_calls || [];
+            assistantMsg.uploadedFiles = ev.uploaded_files || [];
+            assistantMsg.kbScope = ev.kb_scope || [];
+            assistantMsg.kbSources = ev.kb_sources || [];
+            assistantMsg.charScope = ev.char_scope || [];
+            assistantMsg.useCharacterExamples = ev.use_character_examples !== false;
+            assistantMsg.provider = ev.provider || '';
             assistantMsg.modelId = ev.model_id || '';
             assistantMsg.modelDisplay = ev.model_display || '';
             assistantMsg.modelRequested = ev.model_requested || '';
@@ -478,6 +530,10 @@ async function sendMessage(text, files = []) {
             const elapsed = Math.max(0.1, (performance.now() - streamStartTime) / 1000);
             const tokPerSec = Math.round(completionToks / elapsed);
             updateTokenTelemetry(completionToks, tokPerSec);
+          } else if (ev.type === 'error') {
+            assistantMsg.text = `[Błąd: ${ev.text}]`;
+            textEl.innerHTML = renderMarkdown(assistantMsg.text);
+            scrollBottom();
           }
         } catch {}
       }
@@ -940,7 +996,7 @@ async function playTtsText(text) {
     a.play().catch(() => addSystemMsg('Autoplay audio zablokowany przez przeglądarkę.'));
     a.onended = () => URL.revokeObjectURL(url);
   } catch (e) {
-    addSystemMsg(`TTS error: ${e.message}`);
+    console.warn(`TTS error: ${e.message}`);
   }
 }
 

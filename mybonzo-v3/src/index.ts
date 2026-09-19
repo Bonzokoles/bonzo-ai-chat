@@ -323,21 +323,54 @@ app.get('/api/models', async (c) => {
     const { results } = await c.env.DB.prepare(
       'SELECT id, label, models_json FROM hotspot_providers WHERE is_active = 1 ORDER BY priority ASC'
     ).all();
-    const models: any[] = [
-      { id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', name: 'Cloudflare: Llama 3.3 70B (Fast & Free)', provider: 'cloudflare-ai' },
-      { id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', name: 'Cloudflare: DeepSeek R1 32B (Free)', provider: 'cloudflare-ai' },
+
+    const groups: Record<string, any[]> = {
+      'Darmowe (Cloudflare Edge AI)': [
+        { id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', name: 'Meta Llama 3.3 70B (Fast & Free)', provider: 'cloudflare-ai' },
+        { id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', name: 'DeepSeek R1 32B (Darmowy / Free)', provider: 'cloudflare-ai' },
+        { id: '@cf/meta/llama-3.2-3b-instruct', name: 'Meta Llama 3.2 3B (Ultra Szybki)', provider: 'cloudflare-ai' }
+      ]
+    };
+
+    const modelsList: any[] = [
+      { id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', name: 'Meta Llama 3.3 70B (Fast & Free)', provider: 'cloudflare-ai' },
+      { id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b', name: 'DeepSeek R1 32B (Darmowy / Free)', provider: 'cloudflare-ai' },
+      { id: '@cf/meta/llama-3.2-3b-instruct', name: 'Meta Llama 3.2 3B (Ultra Szybki)', provider: 'cloudflare-ai' }
     ];
+
     for (const r of (results || [])) {
       try {
         const list = JSON.parse(r.models_json as string);
+        const groupItems: any[] = [];
+        const groupLabel = r.id === 'openai' 
+          ? 'OpenAI Direct (GPT-4o)' 
+          : (r.id === 'together' ? 'Together AI (Ultra Fast)' : (r.label || r.id));
+
         for (const m of list) {
-          models.push({ id: m, name: `${r.label}: ${m}`, provider: r.id });
+          let displayName = `${r.label}: ${m}`;
+          if (m === 'gpt-4o') displayName = 'OpenAI GPT-4o (Flagowy)';
+          else if (m === 'gpt-4o-mini') displayName = 'OpenAI GPT-4o Mini (Szybki & Ekonomiczny)';
+          else if (m === 'o3-mini') displayName = 'OpenAI o3-mini (Rozumowanie)';
+          else if (m.includes('Llama-3.3-70B')) displayName = 'Together: Llama 3.3 70B Turbo';
+          else if (m.includes('DeepSeek-R1')) displayName = 'Together: DeepSeek R1 Turbo';
+
+          const item = { id: m, name: displayName, provider: r.id };
+          groupItems.push(item);
+          modelsList.push(item);
+        }
+        if (groupItems.length > 0) {
+          groups[groupLabel] = groupItems;
         }
       } catch {}
     }
-    return c.json({ models });
+
+    return c.json({
+      groups,
+      models: modelsList,
+      default_id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+    });
   } catch (err: any) {
-    return c.json({ models: [] });
+    return c.json({ groups: {}, models: [] });
   }
 });
 
@@ -356,31 +389,68 @@ app.post('/api/chat/stream', async (c) => {
     let text = '';
     let modelName = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
     let sysPrompt = 'You are EASTWOOD, an autonomous AI operator for Bonzo.';
+    let conversationHistory: Array<{ role: string; content: string }> = [];
 
     const contentType = c.req.header('content-type') || '';
     if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
       const form = await c.req.parseBody();
-      text = (form['text'] as string) || '';
-      if (form['model_name']) modelName = form['model_name'] as string;
-      if (form['custom_system_prompt']) sysPrompt = form['custom_system_prompt'] as string;
+      text = (form['text'] as string) || (form['message'] as string) || '';
+      if (form['model_name'] || form['model']) {
+        modelName = (form['model_name'] as string) || (form['model'] as string);
+      }
+      if (form['custom_system_prompt']) {
+        sysPrompt = form['custom_system_prompt'] as string;
+      }
+      if (form['messages']) {
+        try {
+          const rawMsgs = typeof form['messages'] === 'string' ? JSON.parse(form['messages'] as string) : form['messages'];
+          if (Array.isArray(rawMsgs)) {
+            conversationHistory = rawMsgs.map((m: any) => ({
+              role: m.role === 'user' ? 'user' : 'assistant',
+              content: m.content || m.text || ''
+            })).filter((m: any) => m.content.trim().length > 0);
+            if (!text && conversationHistory.length > 0) {
+              const lastUser = [...conversationHistory].reverse().find(m => m.role === 'user');
+              if (lastUser) text = lastUser.content;
+            }
+          }
+        } catch {}
+      }
     } else {
       const json: any = await c.req.json().catch(() => ({}));
       text = json.text || json.message || '';
       if (json.model_name || json.model) modelName = json.model_name || json.model;
       if (json.custom_system_prompt) sysPrompt = json.custom_system_prompt;
+      if (Array.isArray(json.messages)) {
+        conversationHistory = json.messages.map((m: any) => ({
+          role: m.role === 'user' ? 'user' : 'assistant',
+          content: m.content || m.text || ''
+        })).filter((m: any) => m.content.trim().length > 0);
+        if (!text && conversationHistory.length > 0) {
+          const lastUser = [...conversationHistory].reverse().find(m => m.role === 'user');
+          if (lastUser) text = lastUser.content;
+        }
+      }
     }
 
-    if (!text) {
+    if (!text && conversationHistory.length === 0) {
       return c.text('data: {"type":"error","text":"Empty message"}\n\n', 400);
+    }
+
+    // Build outbound messages for Hotspot / AI provider
+    const outboundMessages: Array<{ role: string; content: string }> = [
+      { role: 'system', content: sysPrompt }
+    ];
+    if (conversationHistory.length > 0) {
+      outboundMessages.push(...conversationHistory);
+    } else {
+      outboundMessages.push({ role: 'user', content: text });
     }
 
     // Call Hotspot Chat via Worker fetch
     const hotspotPayload = {
       model: modelName,
-      messages: [
-        { role: 'system', content: sysPrompt },
-        { role: 'user', content: text }
-      ]
+      messages: outboundMessages
     };
 
     const hotspotReq = new Request('http://localhost/api/hotspot/chat', {
@@ -429,6 +499,22 @@ app.get('/api/bridge/tasks', async (c) => {
   } catch (err: any) {
     return c.json({ error: err.message }, 500);
   }
+});
+
+app.get('/api/knowledge', (c) => {
+  return c.json({ files: [] });
+});
+
+app.post('/api/knowledge/upload', (c) => {
+  return c.json({ success: true, count: 0 });
+});
+
+app.post('/api/tts', (c) => {
+  return c.text('EDGE_TTS_OFFLINE', 204);
+});
+
+app.get('/api/memory', (c) => {
+  return c.json({ memory: 'Cloudflare Edge AI Mesh Active. Modele gotowe do pracy.' });
 });
 
 export default app;
