@@ -85,6 +85,82 @@ const MCP_TOOLS = [
         }
       }
     }
+  },
+  {
+    name: 'stolar_list_projects',
+    description: 'Fetches carpentry projects from Stolarnia AMS / PRO100 Hub with live KPI calculations (profit, margin, material & labor costs).',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'stolar_calculate_quote',
+    description: 'Simulates financial feasibility and margin for a carpentry project or kitchen furniture quote.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        wycena_klienta: {
+          type: 'number',
+          description: 'Total offer price quoted to client in PLN.'
+        },
+        zaliczka: {
+          type: 'number',
+          description: 'Deposit amount in PLN.'
+        },
+        koszty_materialow: {
+          type: 'number',
+          description: 'Total cost of board, countertops, and fittings in PLN.'
+        },
+        godziny_produkcja: {
+          type: 'number',
+          description: 'Estimated workshop production hours.'
+        },
+        godziny_montaz: {
+          type: 'number',
+          description: 'Estimated on-site installation hours.'
+        },
+        stawka_godz: {
+          type: 'number',
+          description: 'Hourly labor rate in PLN (default 80).'
+        }
+      },
+      required: ['wycena_klienta', 'koszty_materialow']
+    }
+  },
+  {
+    name: 'stolar_create_project',
+    description: 'Creates a new carpentry project in Stolarnia AMS D1 database.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        nazwa: {
+          type: 'string',
+          description: 'Project name (e.g. Kuchnia Dąb Bielony).'
+        },
+        klient: {
+          type: 'string',
+          description: 'Client full name or phone/contact.'
+        },
+        wycena_klienta: {
+          type: 'number',
+          description: 'Client quote price in PLN.'
+        },
+        zaliczka: {
+          type: 'number',
+          description: 'Deposit in PLN.'
+        },
+        termin_klienta: {
+          type: 'string',
+          description: 'Target completion date (YYYY-MM-DD).'
+        },
+        notatki: {
+          type: 'string',
+          description: 'Technical notes or specifications.'
+        }
+      },
+      required: ['nazwa', 'wycena_klienta']
+    }
   }
 ];
 
@@ -243,6 +319,96 @@ mcp.post('/', async (c) => {
                 {
                   type: 'text',
                   text: JSON.stringify(tasks, null, 2)
+                }
+              ]
+            }
+          });
+        }
+
+        if (toolName === 'stolar_list_projects') {
+          const { results } = await c.env.DB.prepare(
+            'SELECT * FROM v_stolar_projekt_kpis ORDER BY id DESC'
+          ).all();
+
+          return c.json({
+            jsonrpc: '2.0',
+            id,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(results || [], null, 2)
+                }
+              ]
+            }
+          });
+        }
+
+        if (toolName === 'stolar_calculate_quote') {
+          const wycena = Number(args.wycena_klienta || 0);
+          const zaliczka = Number(args.zaliczka || 0);
+          const koszty_mat = Number(args.koszty_materialow || 0);
+          const godzProd = Number(args.godziny_produkcja || 0);
+          const godzMont = Number(args.godziny_montaz || 0);
+          const stawka = Number(args.stawka_godz || 80);
+          const koszty_rob = (godzProd + godzMont) * stawka;
+          const koszty_total = Math.round((koszty_mat + koszty_rob) * 100) / 100;
+          const zysk = Math.round((wycena - koszty_total) * 100) / 100;
+          const marza = wycena > 0 ? Math.round((zysk / wycena) * 1000) / 10 : 0;
+          const status_rent = marza >= 35 ? 'dobra' : marza >= 20 ? 'ok' : marza >= 0 ? 'niska' : 'strata';
+
+          const calc = {
+            wycena_klienta: wycena,
+            zaliczka,
+            koszty_materialow: koszty_mat,
+            koszty_robocizny: koszty_rob,
+            koszty_total,
+            zysk_brutto: zysk,
+            marza_proc: marza,
+            status_rentownosci: status_rent
+          };
+
+          return c.json({
+            jsonrpc: '2.0',
+            id,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(calc, null, 2)
+                }
+              ]
+            }
+          });
+        }
+
+        if (toolName === 'stolar_create_project') {
+          const idPrj = `PRJ-${Date.now().toString().slice(-4)}`;
+          const nazwa = args.nazwa;
+          const klient = args.klient || '';
+          const wycena = Number(args.wycena_klienta || 0);
+          const zaliczka = Number(args.zaliczka || 0);
+          const termin = args.termin_klienta || null;
+          const notatki = args.notatki || '';
+          const dataUtw = new Date().toISOString().slice(0, 10);
+
+          await c.env.DB.prepare(
+            `INSERT INTO stolar_projekty (id, nazwa, klient, status, data_utworzenia, termin_klienta, wycena_klienta, zaliczka, notatki)
+             VALUES (?, ?, ?, 'nowy', ?, ?, ?, ?, ?)`
+          ).bind(idPrj, nazwa, klient, dataUtw, termin, wycena, zaliczka, notatki).run();
+
+          const created = await c.env.DB.prepare(
+            'SELECT * FROM v_stolar_projekt_kpis WHERE id = ?'
+          ).bind(idPrj).first();
+
+          return c.json({
+            jsonrpc: '2.0',
+            id,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(created, null, 2)
                 }
               ]
             }

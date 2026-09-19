@@ -6,6 +6,7 @@ import terminal from './api/terminal';
 import smartRouter from './api/smart-router';
 import hotspot from './api/hotspot';
 import mcp from './api/mcp';
+import stolarska from './api/stolarska';
 import { SmartRouterEngine } from './providers/router';
 import { checkOmniRouteHealth, OMNIROUTE_DEFAULT_URL, OMNIROUTE_DEFAULT_KEY, fetchOmniRouteModels } from './providers/omniroute';
 
@@ -51,6 +52,7 @@ app.route('/api/router', smartRouter);
 app.route('/api/hotspot', hotspot);
 app.route('/api/mcp', mcp);
 app.route('/mcp', mcp);
+app.route('/api/stolarska', stolarska);
 
 // Standardowy endpoint OpenAI-compatible dla listy modeli (wymagany przez Terax, Cursor, LibreChat, itp.)
 app.get('/v1/models', (c) => {
