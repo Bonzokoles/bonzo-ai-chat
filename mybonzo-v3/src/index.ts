@@ -13,6 +13,7 @@ import { checkOmniRouteHealth, OMNIROUTE_DEFAULT_URL, OMNIROUTE_DEFAULT_KEY, fet
 type Bindings = {
   DB: D1Database;
   AI: any;
+  MY_BROWSER?: Fetcher;
   OMNIROUTE_URL?: string;
   OMNIROUTE_API_KEY?: string;
   GROQ_API_KEY?: string;

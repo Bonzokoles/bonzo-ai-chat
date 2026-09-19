@@ -3,6 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 workers_dev = true
 
+routes = [
+  { pattern = "mybonzo.com/*", zone_name = "mybonzo.com" },
+  { pattern = "www.mybonzo.com/*", zone_name = "mybonzo.com" }
+]
+
 [assets]
 directory = "./public"
 binding = "ASSETS"
@@ -15,10 +20,8 @@ database_id = "84f0f3cb-7778-4cc4-a6ba-e823ef52f1f3"
 [ai]
 binding = "AI"
 
-routes = [
-  { pattern = "mybonzo.com/*", zone_name = "mybonzo.com" },
-  { pattern = "www.mybonzo.com/*", zone_name = "mybonzo.com" }
-]
+[browser]
+binding = "MY_BROWSER"
 
 [vars]
 OMNIROUTE_URL = "http://127.0.0.1:20128/v1"
