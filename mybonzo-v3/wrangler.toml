@@ -24,5 +24,19 @@ binding = "AI"
 binding = "MY_BROWSER"
 
 [vars]
-OMNIROUTE_URL = "http://127.0.0.1:20128/v1"
 DEFAULT_REQUIREMENT = "free_unlimited"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
