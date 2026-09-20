@@ -14,6 +14,8 @@ type Bindings = {
   DB: D1Database;
   AI: any;
   MY_BROWSER?: Fetcher;
+  BRIDGE_SECRET: string;
+  BONZO_ACCESS_TOKEN?: string;
   OMNIROUTE_URL?: string;
   OMNIROUTE_API_KEY?: string;
   GROQ_API_KEY?: string;
@@ -26,6 +28,27 @@ type Bindings = {
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+// --- HMAC SHA-256 weryfikacja podpisu mostka ---
+async function verifyHmac(secret: string, data: string, signatureHex: string): Promise<boolean> {
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+    const sigBytes = new Uint8Array(
+      signatureHex.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || []
+    );
+    if (sigBytes.length === 0) return false;
+    return await crypto.subtle.verify('HMAC', key, sigBytes, encoder.encode(data));
+  } catch {
+    return false;
+  }
+}
 
 // Enable CORS for all incoming client origins
 app.use('*', cors({
@@ -269,6 +292,28 @@ app.get('/api/mesh/status', async (c) => {
 });
 
 // --- POWERSHELL BRIDGE COMPATIBILITY ENDPOINTS ---
+// Bezpieczeństwo: /task wymaga x-bonzo-auth (BONZO_ACCESS_TOKEN),
+// /poll i /result wymagają x-bridge-token (BRIDGE_SECRET).
+app.use('/api/bridge/*', async (c, next) => {
+  const bridgeToken = c.req.header('x-bridge-token');
+  const clientToken = c.req.header('x-bonzo-auth');
+
+  if (c.req.path === '/api/bridge/task') {
+    if (c.env.BONZO_ACCESS_TOKEN && clientToken !== c.env.BONZO_ACCESS_TOKEN) {
+      await c.env.DB.prepare(
+        'INSERT INTO audit_logs (action, actor, details) VALUES (?, ?, ?)'
+      ).bind('UNAUTHORIZED_TASK_DISPATCH', 'UNKNOWN', c.req.path).run();
+      return c.json({ error: 'UNAUTHORIZED_ACCESS_TOKEN_REQUIRED' }, 401);
+    }
+  } else if (c.req.path === '/api/bridge/poll' || c.req.path === '/api/bridge/result') {
+    if (c.env.BRIDGE_SECRET && bridgeToken !== c.env.BRIDGE_SECRET) {
+      return c.json({ error: 'UNAUTHORIZED_BRIDGE_SECRET' }, 403);
+    }
+  }
+
+  await next();
+});
+
 app.post('/api/bridge/task', async (c) => {
   try {
     const { instruction } = await c.req.json();
@@ -305,8 +350,18 @@ app.get('/api/bridge/poll', async (c) => {
 
 app.post('/api/bridge/result', async (c) => {
   try {
-    const { id, result, status } = await c.req.json();
+    const { id, result, status, signature } = await c.req.json();
     if (!id) return c.json({ error: 'MISSING_ID' }, 400);
+    if (!signature) return c.json({ error: 'MISSING_SIGNATURE' }, 400);
+
+    // Weryfikacja kryptograficzna HMAC (id + result)
+    const isValid = await verifyHmac(c.env.BRIDGE_SECRET, id + (result || ''), signature);
+    if (!isValid) {
+      await c.env.DB.prepare(
+        'INSERT INTO audit_logs (action, actor, details) VALUES (?, ?, ?)'
+      ).bind('HMAC_FORGERY_DETECTED', id, 'Invalid signature rejected').run();
+      return c.json({ error: 'FORBIDDEN_INVALID_SIGNATURE' }, 403);
+    }
 
     await c.env.DB.prepare(
       "UPDATE tasks SET result = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
