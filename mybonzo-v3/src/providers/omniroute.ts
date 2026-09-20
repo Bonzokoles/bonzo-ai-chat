@@ -1,7 +1,7 @@
 import { ChatMessage, ChatOptions, ProviderResult } from './types';
 
 export const OMNIROUTE_DEFAULT_URL = 'http://127.0.0.1:20128/v1';
-export const OMNIROUTE_DEFAULT_KEY = 'oma_live_sGrlekYFf0gd7wE7qRn1tTq4yq8b698fHdA0JLuLl-A';
+export const OMNIROUTE_DEFAULT_KEY = ''; // set via Cloudflare Secret (env.OMNIROUTE_API_KEY)
 
 export const OMNIROUTE_FREE_COMBOS = [
   { id: 'auto/best-free', name: 'OmniRoute — Best Free Tier (Auto-Rotation)' },

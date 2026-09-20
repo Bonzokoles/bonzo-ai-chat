@@ -1,9 +1,9 @@
 -- Rejestracja darmowych dostawców i bram API
 INSERT OR IGNORE INTO api_keys (provider, key_value, success_rate) VALUES 
-('openrouter', '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', 1.0),
-('opencode', 'sk-YolSFGkgX04ni4qwJHW6Mv7xrCnCc94jnBTN4pUGGvINRTMAP5ywCRYHWT5EMniM', 1.0),
-('cloudflare', 'cfut_pOEjYqDt9O8YVUNVpDaYTG608A5YxSAHj6eEL5hj6b45e85b', 1.0),
-('omniroute', 'oma_live_sGrlekYFf0gd7wE7qRn1tTq4yq8b698fHdA0JLuLl-A', 1.0),
+('openrouter', 'REDACTED', 1.0),
+('opencode', 'REDACTED', 1.0),
+('cloudflare', 'REDACTED', 1.0),
+('omniroute', 'REDACTED', 1.0),
 ('pollinations', 'keyless_public', 1.0),
 ('airforce', 'keyless_public', 1.0);
 
