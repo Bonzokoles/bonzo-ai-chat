@@ -608,6 +608,25 @@ def _hit_sources(hits: List[dict]) -> List[str]:
     return list(dict.fromkeys(hit.get("source", "") for hit in hits if hit.get("source")))
 
 
+def _apply_shaolin_federation(query: str, kb_context: str, kb_hits: List[dict]):
+    """Dokłada dowody z federacji 36 Chambers (read-only, fail-soft) do kontekstu czatu.
+
+    Każde zapytanie wiedzowe przechodzi przez orkiestrator (komnaty 01/03/04/05/08...),
+    a źródła trafiają do kb_sources jako `chamber:NN`. Brak orkiestratora/awaria = bez zmian.
+    """
+    try:
+        import shaolin_bridge
+        fed_ctx, fed_hits = shaolin_bridge.federated_context(query, limit=6)
+    except Exception as exc:  # pragma: no cover - never break chat
+        print(f"[36ch] federation skipped: {exc}")
+        return kb_context, kb_hits
+    if not fed_ctx:
+        return kb_context, kb_hits
+    kb_context = (kb_context + "\n\n" + fed_ctx).strip() if kb_context else fed_ctx
+    kb_hits = list(kb_hits) + fed_hits
+    return kb_context, kb_hits
+
+
 def _profile_context(query: str, task_profile_key: str, task_profile_def: dict):
     kb_scope = _profile_kb_scope(task_profile_def)
     char_scope = _profile_char_scope(task_profile_def)
@@ -623,6 +642,7 @@ def _profile_context(query: str, task_profile_key: str, task_profile_def: dict):
             if coding_ctx:
                 kb_context = coding_ctx
                 kb_hits = [{"source": src, "text": "", "score": 1.0} for src in rule_sources]
+        kb_context, kb_hits = _apply_shaolin_federation(query, kb_context, kb_hits)
         return {
             "kb_scope": kb_scope,
             "char_scope": char_scope,
@@ -659,6 +679,8 @@ def _profile_context(query: str, task_profile_key: str, task_profile_def: dict):
         if coding_ctx:
             kb_context = (kb_context + "\n\n" + coding_ctx).strip() if kb_context else coding_ctx
             kb_hits.extend([{"source": src, "text": "", "score": 1.0} for src in rule_sources])
+
+    kb_context, kb_hits = _apply_shaolin_federation(query, kb_context, kb_hits)
 
     return {
         "kb_scope": kb_scope,
@@ -1477,8 +1499,12 @@ NARZ\u0118DZIA MCP \u2014 ZASADY:
         print(traceback.format_exc())
 
         def error_gen():
-            yield f"data: {json.dumps({'type': 'chunk', 'text': f'B\u0142\u0105d: {str(e)}'})}\n\n"
-            yield f"data: {json.dumps({'type': 'done', 'text': '', 'tool_calls': [], 'task_profile': task_profile or 'default'})}\n\n"
+            # 36Ch/security: build payloads outside f-strings (no backslash in f-string expr; py3.11 safe).
+            err_text = "B\u0142\u0105d: " + str(e)
+            chunk_payload = json.dumps({"type": "chunk", "text": err_text})
+            done_payload = json.dumps({"type": "done", "text": "", "tool_calls": [], "task_profile": task_profile or "default"})
+            yield "data: " + chunk_payload + "\n\n"
+            yield "data: " + done_payload + "\n\n"
 
         return StreamingResponse(error_gen(), media_type="text/event-stream")
     finally:
@@ -1893,4 +1919,5 @@ if (_FRONTEND_DIR / "addons").exists():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=4149, reload=False)
+    # Bramka: domyslnie tylko loopback (127.0.0.1). LAN wlacz swiadomie: THE_BUCH_HOST=0.0.0.0
+    uvicorn.run("main:app", host=os.getenv("THE_BUCH_HOST", "127.0.0.1"), port=4149, reload=False)

@@ -20,3 +20,8 @@ PUBLIC_BACKEND_URL=http://localhost:8000/api
 # Development: *
 # Production: https://twoja-strona.pages.dev,https://twoja-domena.com
 ALLOWED_ORIGINS=*
+
+# 36 Chambers federation (serwer backendu)
+SHAOLIN_FEDERATION=1
+CHAMBERS_ORCHESTRATOR=
+CHAMBERS_ROOT=
